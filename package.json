@@ -1,0 +1,20 @@
+{
+  "name": "throttleforge",
+  "version": "0.1.0",
+  "description": "ThrottleForge monorepo — adaptive API rate-limiting engine",
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @throttleforge/api",
+    "start": "npm run start -w @throttleforge/api",
+    "start:dev": "npm run start:dev -w @throttleforge/api",
+    "start:prod": "npm run start:prod -w @throttleforge/api",
+    "test": "npm run test -w @throttleforge/api",
+    "test:watch": "npm run test:watch -w @throttleforge/api",
+    "test:cov": "npm run test:cov -w @throttleforge/api"
+  }
+}
