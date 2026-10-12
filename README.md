@@ -8,12 +8,14 @@ Locally runnable API rate-limiting engine in an **npm workspaces** monorepo.
 
 **Milestone 2** adds inspection-budgeted stale-record cleanup on the in-memory store and local core/HTTP load generators under `tools/load-gen`.
 
+**Milestone 3** adds a weighted sliding-window counter and token bucket beside the fixed-window baseline, with Nest-free core comparisons on identical FakeClock traces. Nest HTTP remains fixed-window only.
+
 ## Requirements
 
 - Node.js LTS
 - npm
 
-No Redis, Docker, PostgreSQL, or cloud services for Milestone 1 / 1b / 2.
+No Redis, Docker, PostgreSQL, or cloud services for Milestone 1 / 1b / 2 / 3.
 
 ## Repository layout
 
@@ -78,29 +80,53 @@ RATE_LIMIT=3 RATE_WINDOW_MS=10000 npm run start:dev
   - `X-RateLimit-Reset` (Unix epoch **seconds**)
 - **Reject:** `429` with `Retry-After` (integer seconds) and the same `X-RateLimit-*` headers (`Remaining` is `0`).
 
-## Algorithm (Milestone 1)
+## Algorithms
+
+### Fixed window (Milestone 1 — Nest default)
 
 - Globally calendar-aligned windows: `windowStart = floor(now / windowMs) * windowMs`.
 - Inclusive limit: at most `limit` allows per client per window.
 - Synchronous check-and-increment in one event-loop turn (no mutex; no async gap in the critical section).
 - Injectable clock in the core for deterministic unit tests.
 
-### Known fixed-window trade-off
+**Trade-off:** a client may send up to `limit` requests just before a window boundary and `limit` again just after (~`2× limit` in a short span).
 
-A client may send up to `limit` requests just before a window boundary and `limit` again just after (~`2× limit` in a short span). That is an algorithmic property, not an implementation defect.
+### Weighted sliding-window counter (Milestone 3)
 
-## Memory cleanup (Milestone 2)
+- `estimate = prevCount * (1 - elapsed / windowMs) + currCount`.
+- Allow iff pre-request `estimate < limit`.
+- Softens the fixed-window boundary burst; O(1) memory per client (not a request log).
+- `remaining` is the exact count of further allows at the same frozen `now` (`max(0, ceil(limit - estimate) - 1)`), not a future-time guarantee.
+- Reject `resetAt` may fall mid-window when previous-window weight decays.
 
-`InMemoryStore` keeps a process-local `Map` of `{ windowStart, count }` per client.
+### Token bucket (Milestone 3)
 
-- A record is **stale** when `record.windowStart < currentWindowStart` (the window start of the current consume).
-- After each `tryConsume`, the store runs `purgeStale(windowStart, maxInspect)` with a small fixed budget (16 inspections).
-- **Guarantee:** at most `maxInspect` Map entries are **examined** per purge call (operation-count bound). This is not a wall-clock time bound. Deletion count is an outcome, not the budget.
-- The iterator **does not restart mid-call**; when a pass ends, the next `purgeStale` starts a new pass. Cleanup is therefore **eventual** under continued traffic, not necessarily complete in one request.
-- Active-window records are never deleted by purge, so quotas and Decision fields are unchanged.
-- **Active-window client cardinality remains unbounded** — many distinct clients in the *current* window still grow the Map until that window ends and sweeps catch up.
-- An **idle** process performs no opportunistic cleanup until new requests arrive (no background timer).
-- The store remains **process-local** (no cross-process coordination).
+- Policy-equivalent mapping: `capacity = limit`, `refillPerMs = limit / windowMs` (`tokenBucketFromWindow`).
+- Refill then consume; allow iff `tokens >= 1`; float balances without premature rounding.
+- Burst up to capacity, then sustained ≈ `limit / windowMs`.
+- Reject `resetAt` is the earliest ms when one token is available again.
+
+### When to use which
+
+| Need | Prefer |
+|------|--------|
+| Simple calendar quotas, Nest HTTP today | Fixed window |
+| Reduce boundary double-spend without log memory | Sliding weighted |
+| Explicit burst + smooth refill | Token bucket |
+
+Equal allow counts across algorithms under the same `limit`/`windowMs` are **not** expected — compare behavior, not “accuracy scores.”
+
+## Memory cleanup (Milestone 2–3)
+
+Each in-memory algorithm store uses opportunistic `purgeStale` with inspection budget 16, no mid-call iterator restart, and eventual cleanup under traffic (no idle timer). Decision fields are unchanged by purge of unrelated keys.
+
+| Store | Stale when |
+|-------|------------|
+| `InMemoryStore` (fixed) | `windowStart < currentWindowStart` |
+| `SlidingWindowStore` | `currWindowStart < C - windowMs` (keep current + previous windows) |
+| `TokenBucketStore` | virtual refill would already reach `capacity` (never purge a not-yet-full depleted bucket) |
+
+Active client cardinality in the live horizon remains unbounded. Stores are process-local.
 
 ## Tests
 
@@ -112,24 +138,23 @@ npm test
 
 Correctness coverage:
 
-1. **Unit** — policy validation, under/exact/over limit, multi-client, window expiry (fake clock), store `purgeStale` budgets and eventual cleanup.
-2. **Concurrency** — parallel `consume()` calls; allowed count equals `limit` under a sync critical section.
-3. **Integration** — HTTP `200` / `429` with exact rate-limit headers (deterministic clock), override-enabled isolation, and override-disabled shared quota.
+1. **Unit** — policy validation (FW/SW/TB), under/exact/over quota, fractional SW `remaining`, TB refill/`resetAt±1`, multi-client, FakeClock boundaries, store purge budgets.
+2. **Concurrency** — parallel `consume()` for fixed, sliding, and token-bucket; allowed count matches sync inventory.
+3. **Integration** — HTTP `200` / `429` with exact rate-limit headers (fixed-window Nest shell).
 
-## Load tools (Milestone 2)
+## Load tools (Milestone 2–3)
 
 Observational generators live in [`tools/load-gen`](tools/load-gen/README.md). They are **not** replacements for Jest.
 
 ```bash
-npm run load:core -- --pattern one-client --requests 200 --concurrency 20 --limit 50
+npm run load:compare -- --scenario boundary-burst --limit 10 --windowMs 1000
+npm run load:core -- --pattern one-client --requests 200 --concurrency 20 --limit 50 --algorithm sliding
 npm run load:http -- --baseUrl http://127.0.0.1:3000 --requests 40 --concurrency 8 --pattern one-client
 ```
 
-- `--requests` ≥ 1; `--concurrency` ≥ 1 and clamped to ≤ `--requests`.
-- Concurrency uses a fixed-size in-flight pool.
-- HTTP mode reports `success`, `expectedRateLimited` (429), `unexpectedStatus`, and `transportErrors` separately — **429 is not an error**.
-- HTTP `many-clients` needs `ALLOW_TEST_CLIENT_ID=true` and `NODE_ENV=development|test` on the running server.
-- Throughput and latency percentiles are machine-dependent; do not compare core vs HTTP numbers directly.
+- `load:compare` generates one trace and replays it on all three algorithms (correctness vs observational metrics separated).
+- `--algorithm` on `load:core`: `fixed` \| `sliding` \| `token-bucket`.
+- Throughput and latency are machine-dependent; do not treat comparison output as a performance ranking.
 
 ## Prototype limitations (read before treating this as production)
 
@@ -142,16 +167,16 @@ npm run load:http -- --baseUrl http://127.0.0.1:3000 --requests 40 --concurrency
 
 ## API package layout
 
-- `apps/api/src/core/` — Nest-free policy, clock, store contract, fixed-window limiter, in-memory store
-- `apps/api/src/rate-limit/` — Nest module, guard, identity adapter, service facade
+- `apps/api/src/core/` — Nest-free policy, clock, Decision, fixed/sliding/token-bucket limiters and stores
+- `apps/api/src/rate-limit/` — Nest module, guard, identity adapter, service facade (fixed-window)
 - `apps/api/src/demo/`, `apps/api/src/health/` — sample routes
 - `apps/api/test/unit`, `concurrency`, `integration`
-- `tools/load-gen/` — core and HTTP load generators
+- `tools/load-gen/` — core bench, algorithm compare, HTTP load generators
 
 ## Roadmap
 
-2. ~~Bounded memory + local traffic generator~~ (this milestone)  
-3. Sliding-window / token-bucket comparison  
+2. ~~Bounded memory + local traffic generator~~  
+3. ~~Sliding-window / token-bucket comparison~~ (this milestone)  
 4. Redis shared quotas + optional Docker Compose for reproducibility  
 5. Metrics / optional local Prometheus–Grafana  
 5b. Next.js `apps/web` dashboard (HTTP client to the API)  

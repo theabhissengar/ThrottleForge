@@ -1,25 +1,34 @@
 /**
- * Core (Nest-free) load generator for FixedWindowLimiter + InMemoryStore.
+ * Core (Nest-free) load generator for rate-limit algorithms + in-memory stores.
  *
  * Observational only — not a CI correctness gate for latency/throughput.
+ * For side-by-side algorithm comparison on identical traces, use compare-scenarios.ts.
  *
  * Example:
- *   npx ts-node --transpile-only tools/load-gen/core-bench.ts --pattern one-client --requests 200 --concurrency 20
+ *   npx ts-node --transpile-only tools/load-gen/core-bench.ts --pattern one-client --requests 200 --concurrency 20 --algorithm fixed
  */
 
 import {
   FakeClock,
   FixedWindowLimiter,
   InMemoryStore,
+  RateLimiter,
+  SlidingWindowLimiter,
+  SlidingWindowStore,
+  TokenBucketLimiter,
+  TokenBucketStore,
+  tokenBucketFromWindow,
 } from '../../apps/api/src/core';
 import { runPool, summarizeLatencies } from './pool';
 
 type Pattern = 'one-client' | 'many-clients' | 'same-window' | 'cross-boundary';
+type Algorithm = 'fixed' | 'sliding' | 'token-bucket';
 
 interface Config {
   requests: number;
   concurrency: number;
   pattern: Pattern;
+  algorithm: Algorithm;
   limit: number;
   windowMs: number;
 }
@@ -31,6 +40,7 @@ Options:
   --requests <n>       Total requests (integer >= 1)
   --concurrency <n>    Max in-flight (integer >= 1, <= requests)
   --pattern <name>     one-client | many-clients | same-window | cross-boundary
+  --algorithm <name>   fixed | sliding | token-bucket (default fixed)
   --limit <n>          Rate limit (default 50)
   --windowMs <n>       Window length in ms (default 60000)
 
@@ -90,10 +100,63 @@ function parseArgs(argv: string[]): Config {
     throw new Error(`Unknown --pattern ${pattern}`);
   }
 
+  const algorithm = (opts.algorithm ?? 'fixed') as Algorithm;
+  const algorithms: Algorithm[] = ['fixed', 'sliding', 'token-bucket'];
+  if (!algorithms.includes(algorithm)) {
+    throw new Error(`Unknown --algorithm ${algorithm}`);
+  }
+
   const limit = parsePositiveInt(opts.limit ?? '50', '--limit');
   const windowMs = parsePositiveInt(opts.windowMs ?? '60000', '--windowMs');
 
-  return { requests, concurrency, pattern, limit, windowMs };
+  return { requests, concurrency, pattern, algorithm, limit, windowMs };
+}
+
+function createLimiter(
+  algorithm: Algorithm,
+  limit: number,
+  windowMs: number,
+  clock: FakeClock,
+): {
+  limiter: RateLimiter;
+  size: () => number;
+  purgeAfterAdvance: (windowStart: number) => void;
+} {
+  if (algorithm === 'fixed') {
+    const store = new InMemoryStore();
+    return {
+      limiter: new FixedWindowLimiter({ limit, windowMs }, store, clock),
+      size: () => store.size(),
+      purgeAfterAdvance: (ws) => {
+        for (let i = 0; i < 64; i += 1) {
+          store.purgeStale(ws, 16);
+        }
+      },
+    };
+  }
+  if (algorithm === 'sliding') {
+    const store = new SlidingWindowStore();
+    return {
+      limiter: new SlidingWindowLimiter({ limit, windowMs }, store, clock),
+      size: () => store.size(),
+      purgeAfterAdvance: (ws) => {
+        for (let i = 0; i < 64; i += 1) {
+          store.purgeStale(ws, windowMs, 16);
+        }
+      },
+    };
+  }
+  const store = new TokenBucketStore();
+  const policy = tokenBucketFromWindow({ limit, windowMs });
+  return {
+    limiter: new TokenBucketLimiter(policy, store, clock),
+    size: () => store.size(),
+    purgeAfterAdvance: (ws) => {
+      for (let i = 0; i < 64; i += 1) {
+        store.purgeStale(ws, policy.capacity, policy.refillPerMs, 16);
+      }
+    },
+  };
 }
 
 async function main(): Promise<void> {
@@ -107,10 +170,10 @@ async function main(): Promise<void> {
 
   const windowStart = 1_700_000_000_000;
   const clock = new FakeClock(windowStart);
-  const store = new InMemoryStore();
-  const limiter = new FixedWindowLimiter(
-    { limit: config.limit, windowMs: config.windowMs },
-    store,
+  const { limiter, size, purgeAfterAdvance } = createLimiter(
+    config.algorithm,
+    config.limit,
+    config.windowMs,
     clock,
   );
 
@@ -123,7 +186,7 @@ async function main(): Promise<void> {
     latencyNs: bigint;
   };
 
-  const sizeBefore = store.size();
+  const sizeBefore = size();
   const wallStart = process.hrtime.bigint();
 
   const tally = (outcomes: Outcome[]) => {
@@ -169,12 +232,10 @@ async function main(): Promise<void> {
 
     const pre = await runPhase(firstHalf, 'ip:pre');
     clock.set(windowStart + config.windowMs);
-    const sizeAtBoundary = store.size();
+    const sizeAtBoundary = size();
     const post = await runPhase(secondHalf, 'ip:post');
 
-    for (let i = 0; i < 64; i += 1) {
-      store.purgeStale(windowStart + config.windowMs, 16);
-    }
+    purgeAfterAdvance(windowStart + config.windowMs);
 
     const stats = tally([...pre, ...post]);
     const wallEnd = process.hrtime.bigint();
@@ -185,6 +246,7 @@ async function main(): Promise<void> {
       JSON.stringify(
         {
           mode: 'core',
+          algorithm: config.algorithm,
           pattern: config.pattern,
           requests: config.requests,
           concurrency: config.concurrency,
@@ -201,7 +263,7 @@ async function main(): Promise<void> {
           latency,
           storeSizeBefore: sizeBefore,
           storeSizeAtBoundary: sizeAtBoundary,
-          storeSizeAfter: store.size(),
+          storeSizeAfter: size(),
           note: 'FakeClock used for quota/boundary; elapsedMs is wall-clock observational only',
         },
         null,
@@ -235,16 +297,13 @@ async function main(): Promise<void> {
     },
   );
 
-  const storeSizeAfterTraffic = store.size();
+  const storeSizeAfterTraffic = size();
   let storeSizeAfterAdvance: number | undefined;
   if (effectivePattern === 'many-clients') {
     clock.set(windowStart + config.windowMs);
     limiter.consume('ip:keepalive');
-    const sweeps = Math.ceil(store.size() / 16) + 2;
-    for (let i = 0; i < sweeps; i += 1) {
-      store.purgeStale(windowStart + config.windowMs, 16);
-    }
-    storeSizeAfterAdvance = store.size();
+    purgeAfterAdvance(windowStart + config.windowMs);
+    storeSizeAfterAdvance = size();
   }
 
   const stats = tally(outcomes);
@@ -256,6 +315,7 @@ async function main(): Promise<void> {
     JSON.stringify(
       {
         mode: 'core',
+        algorithm: config.algorithm,
         pattern: config.pattern,
         requests: config.requests,
         concurrency: config.concurrency,
