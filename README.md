@@ -61,9 +61,10 @@ RATE_LIMIT=3 RATE_WINDOW_MS=10000 npm run start:dev
 
 ## Identity and trust
 
-- Default client key: remote connection IP (`ip:<address>`).
+- Default client key: remote connection IP (`ip:<address>`). If no connection IP is available, the key is `ip:unknown` (shared bucket).
 - `X-Forwarded-For` is **not** trusted by default (no trusted-proxy configuration in M1).
-- Optional header `X-Test-Client-Id` is honored **only** when `ALLOW_TEST_CLIENT_ID=true` and `NODE_ENV` is `test` or `development`. Do not enable this as a production identity source.
+- Optional header `X-Test-Client-Id` is honored **only** when `ALLOW_TEST_CLIENT_ID` is exactly `true` **and** `NODE_ENV` is `test` or `development`. Do not enable this as a production identity source.
+- The Nest-free core accepts an optional `now` on `consume` for deterministic tests; the HTTP layer does not expose that parameter.
 
 ## Rate-limit responses
 
@@ -94,9 +95,9 @@ npm test
 
 Coverage intended for M1:
 
-1. **Unit** — policy validation, under/exact/over limit, multi-client, window expiry (fake clock), boundary instant.
+1. **Unit** — policy validation, under/exact/over limit, multi-client, window expiry (fake clock), pre-boundary and exact boundary.
 2. **Concurrency** — parallel `consume()` calls; allowed count equals `limit` under a sync critical section.
-3. **Integration** — HTTP `200` then `429` + `Retry-After`, headers, test-client isolation.
+3. **Integration** — HTTP `200` / `429` with exact rate-limit headers (deterministic clock), override-enabled isolation, and override-disabled shared quota.
 
 Load / traffic-generator experiments are **Milestone 2**, not a substitute for these correctness tests.
 

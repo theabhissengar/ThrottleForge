@@ -76,6 +76,25 @@ describe('FixedWindowLimiter', () => {
     expect(store.getRecord('ip:a')?.count).toBe(1);
   });
 
+  it('rejects at resetAt-1 when saturated then allows at resetAt', () => {
+    for (let i = 0; i < limit; i++) {
+      limiter.consume('ip:a');
+    }
+    const resetAt = windowStart + windowMs;
+
+    clock.set(resetAt - 1);
+    const before = limiter.consume('ip:a');
+    expect(before.allowed).toBe(false);
+    expect(store.getRecord('ip:a')?.count).toBe(limit);
+    expect(store.getRecord('ip:a')?.windowStart).toBe(windowStart);
+
+    clock.set(resetAt);
+    const atBoundary = limiter.consume('ip:a');
+    expect(atBoundary.allowed).toBe(true);
+    expect(store.getRecord('ip:a')?.windowStart).toBe(resetAt);
+    expect(store.getRecord('ip:a')?.count).toBe(1);
+  });
+
   it('computes Retry-After in whole seconds on reject', () => {
     for (let i = 0; i < limit; i++) {
       limiter.consume('ip:a');
