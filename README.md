@@ -6,12 +6,14 @@ Locally runnable API rate-limiting engine in an **npm workspaces** monorepo.
 
 **Milestone 1b** placed the Nest app under `apps/api` and configured root workspaces. A Next.js `apps/web` app is planned for a later milestone (after metrics exist) and is **not** scaffolded yet.
 
+**Milestone 2** adds inspection-budgeted stale-record cleanup on the in-memory store and local core/HTTP load generators under `tools/load-gen`.
+
 ## Requirements
 
 - Node.js LTS
 - npm
 
-No Redis, Docker, PostgreSQL, or cloud services for Milestone 1 / 1b.
+No Redis, Docker, PostgreSQL, or cloud services for Milestone 1 / 1b / 2.
 
 ## Repository layout
 
@@ -20,6 +22,8 @@ throttleforge/
   apps/
     api/          # NestJS backend (@throttleforge/api)
   docs/           # Architecture notes
+  tools/
+    load-gen/     # Core + HTTP load generators (observational)
   package.json    # Workspace root (script proxies)
 ```
 
@@ -85,6 +89,19 @@ RATE_LIMIT=3 RATE_WINDOW_MS=10000 npm run start:dev
 
 A client may send up to `limit` requests just before a window boundary and `limit` again just after (~`2× limit` in a short span). That is an algorithmic property, not an implementation defect.
 
+## Memory cleanup (Milestone 2)
+
+`InMemoryStore` keeps a process-local `Map` of `{ windowStart, count }` per client.
+
+- A record is **stale** when `record.windowStart < currentWindowStart` (the window start of the current consume).
+- After each `tryConsume`, the store runs `purgeStale(windowStart, maxInspect)` with a small fixed budget (16 inspections).
+- **Guarantee:** at most `maxInspect` Map entries are **examined** per purge call (operation-count bound). This is not a wall-clock time bound. Deletion count is an outcome, not the budget.
+- The iterator **does not restart mid-call**; when a pass ends, the next `purgeStale` starts a new pass. Cleanup is therefore **eventual** under continued traffic, not necessarily complete in one request.
+- Active-window records are never deleted by purge, so quotas and Decision fields are unchanged.
+- **Active-window client cardinality remains unbounded** — many distinct clients in the *current* window still grow the Map until that window ends and sweeps catch up.
+- An **idle** process performs no opportunistic cleanup until new requests arrive (no background timer).
+- The store remains **process-local** (no cross-process coordination).
+
 ## Tests
 
 From the repository root:
@@ -93,18 +110,31 @@ From the repository root:
 npm test
 ```
 
-Coverage intended for M1:
+Correctness coverage:
 
-1. **Unit** — policy validation, under/exact/over limit, multi-client, window expiry (fake clock), pre-boundary and exact boundary.
+1. **Unit** — policy validation, under/exact/over limit, multi-client, window expiry (fake clock), store `purgeStale` budgets and eventual cleanup.
 2. **Concurrency** — parallel `consume()` calls; allowed count equals `limit` under a sync critical section.
 3. **Integration** — HTTP `200` / `429` with exact rate-limit headers (deterministic clock), override-enabled isolation, and override-disabled shared quota.
 
-Load / traffic-generator experiments are **Milestone 2**, not a substitute for these correctness tests.
+## Load tools (Milestone 2)
+
+Observational generators live in [`tools/load-gen`](tools/load-gen/README.md). They are **not** replacements for Jest.
+
+```bash
+npm run load:core -- --pattern one-client --requests 200 --concurrency 20 --limit 50
+npm run load:http -- --baseUrl http://127.0.0.1:3000 --requests 40 --concurrency 8 --pattern one-client
+```
+
+- `--requests` ≥ 1; `--concurrency` ≥ 1 and clamped to ≤ `--requests`.
+- Concurrency uses a fixed-size in-flight pool.
+- HTTP mode reports `success`, `expectedRateLimited` (429), `unexpectedStatus`, and `transportErrors` separately — **429 is not an error**.
+- HTTP `many-clients` needs `ALLOW_TEST_CLIENT_ID=true` and `NODE_ENV=development|test` on the running server.
+- Throughput and latency percentiles are machine-dependent; do not compare core vs HTTP numbers directly.
 
 ## Prototype limitations (read before treating this as production)
 
 - **Single process only.** Separate Node processes each keep their own Map; effective limit ≈ `limit × N`.
-- **In-memory map is unbounded** by distinct client keys. Many rotating identities can grow memory until Milestone 2 adds safe stale-entry cleanup.
+- **Active-window Map growth** is still unbounded by unique clients in the current window (stale entries are cleaned eventually under traffic).
 - **IP identity is not an anti-abuse control** without a trusted network path.
 - **No Redis / shared store** yet (planned for Milestone 4 with atomic consume semantics and an explicit fail-open vs fail-closed policy).
 - Counters are **transient**; there is no relational database by design.
@@ -116,10 +146,11 @@ Load / traffic-generator experiments are **Milestone 2**, not a substitute for t
 - `apps/api/src/rate-limit/` — Nest module, guard, identity adapter, service facade
 - `apps/api/src/demo/`, `apps/api/src/health/` — sample routes
 - `apps/api/test/unit`, `concurrency`, `integration`
+- `tools/load-gen/` — core and HTTP load generators
 
 ## Roadmap
 
-2. Bounded memory + stronger concurrency evidence + local traffic generator  
+2. ~~Bounded memory + local traffic generator~~ (this milestone)  
 3. Sliding-window / token-bucket comparison  
 4. Redis shared quotas + optional Docker Compose for reproducibility  
 5. Metrics / optional local Prometheus–Grafana  

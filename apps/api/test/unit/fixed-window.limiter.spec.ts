@@ -105,4 +105,26 @@ describe('FixedWindowLimiter', () => {
     // Remaining window: 750ms -> ceil to 1 second.
     expect(rejected.retryAfterSec).toBe(1);
   });
+
+  it('does not change quota decisions when stale peers are purged (L1)', () => {
+    // Abandoned clients from the prior window should not inflate allows for ip:a.
+    for (let i = 0; i < 8; i += 1) {
+      limiter.consume(`ip:abandoned-${i}`);
+    }
+    for (let i = 0; i < limit; i += 1) {
+      expect(limiter.consume('ip:a').allowed).toBe(true);
+    }
+    const rejected = limiter.consume('ip:a');
+    expect(rejected.allowed).toBe(false);
+    expect(rejected.remaining).toBe(0);
+    expect(rejected.resetAt).toBe(windowStart + windowMs);
+    expect(rejected.retryAfterSec).toBeDefined();
+    expect(store.getRecord('ip:a')?.count).toBe(limit);
+
+    clock.advance(windowMs);
+    const after = limiter.consume('ip:a');
+    expect(after.allowed).toBe(true);
+    expect(after.remaining).toBe(limit - 1);
+    expect(after.resetAt).toBe(windowStart + 2 * windowMs);
+  });
 });
