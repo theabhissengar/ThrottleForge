@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CompareBarChart } from "@/components/charts";
-import { DataTable, PageHeader, Panel } from "@/components/ui";
+import { Badge, DataTable, PageHeader, Panel } from "@/components/ui";
 import { algorithmLabel, COMPARE_SCENARIOS, SCENARIO_INTENTS } from "@/lib/artifacts/labels";
 import type { CompareReport } from "@/lib/artifacts/types";
 
@@ -14,35 +14,31 @@ export function AlgorithmLab({
   const [scenario, setScenario] = useState<(typeof COMPARE_SCENARIOS)[number]>("boundary-burst");
   const report = reports[scenario];
   return (
-    <>
+    <div className="page-stack">
       <PageHeader
         title="Algorithm Lab"
         description="One ordered trace, replayed from fresh state on the fixed window, the weighted sliding-window counter, and the token bucket. Unequal allow counts are expected."
+        about="algorithms"
       />
-      <div className="mb-6">
-        <fieldset>
-          <legend className="mb-2 text-sm font-medium">Scenario</legend>
-          <div className="grid gap-2 md:grid-cols-2">
-            {COMPARE_SCENARIOS.map((id) => (
-              <label key={id} className="flex gap-3 rounded-[10px] border border-line bg-panel px-3 py-2 text-sm">
-                <input
-                  type="radio"
-                  name="scenario"
-                  value={id}
-                  checked={scenario === id}
-                  onChange={() => setScenario(id)}
-                />
-                <span>
-                  <span className="font-medium">{id}</span>
-                  <span className="mt-1 block text-ink-dim">{SCENARIO_INTENTS[id]}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      </div>
+      <p className="type-body max-w-[65ch] text-ink-dim">
+        A fixed window resets on a boundary. The sliding-window counter still counts the previous window. The token bucket refills smoothly. Unequal allow counts are expected.
+      </p>
+      <fieldset>
+        <legend className="type-card mb-3">Scenario</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {COMPARE_SCENARIOS.map((id) => (
+            <label key={id} className="flex min-h-11 gap-3 rounded-[var(--radius-control)] border border-line bg-panel px-3 py-2">
+              <input type="radio" name="scenario" value={id} checked={scenario === id} onChange={() => setScenario(id)} />
+              <span>
+                <span className="type-control block">{SCENARIO_INTENTS[id]}</span>
+                <span className="type-data-sm mt-1 block text-ink-dim">{id}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <CompareView report={report} badge="Committed reference" />
-    </>
+    </div>
   );
 }
 
@@ -53,15 +49,15 @@ export function CompareView({ report, badge }: { report: CompareReport; badge: s
     rejected: result.correctness.rejected,
   }));
   return (
-    <div className="grid gap-4">
-      <p className="text-sm text-ink">
-        <span className="rounded-full border border-signal px-2 py-1">{badge}</span>
-        <span className="ml-3 font-mono">
+    <div className="page-stack">
+      <p className="type-body flex flex-wrap items-center gap-3">
+        <Badge tone={badge === "Committed reference" ? "reference" : "imported"}>{badge}</Badge>
+        <span className="type-data-sm text-ink-dim">
           limit {report.limit}, windowMs {report.windowMs}, trace length {report.traceLength}
         </span>
       </p>
-      <Panel title="Correctness">
-        <p className="mb-3 text-sm text-ink-dim">
+      <Panel title="Decisions" about="algorithms" aboutLabel="About this comparison">
+        <p className="type-body mb-4 text-ink-dim">
           Y axis: requests. The scale starts at zero and is shared across algorithms. Allowed and rejected are counts, not a score.
         </p>
         <CompareBarChart points={points} />
@@ -79,8 +75,8 @@ export function CompareView({ report, badge }: { report: CompareReport; badge: s
           />
         </div>
       </Panel>
-      <Panel title="Observational timings from this capture">
-        <p className="mb-3 text-sm leading-6 text-ink-dim">
+      <Panel title="Observational timings" about="algorithms" aboutLabel="About this comparison">
+        <p className="type-body mb-4 text-ink-dim">
           Elapsed time, throughput, and percentiles come from this machine&apos;s capture. They are not a ranking and they are not comparable to load:http or load:core.
         </p>
         <DataTable

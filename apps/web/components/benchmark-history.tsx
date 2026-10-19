@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { AdaptiveExplorer } from "@/components/adaptive-explorer";
 import { CompareView } from "@/components/algorithm-lab";
-import { DataTable, PageHeader, Panel } from "@/components/ui";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { Badge, DataTable, PageHeader, Panel } from "@/components/ui";
 import { artifactMetadata, parseArtifact } from "@/lib/artifacts/parse-report";
 import type { ArtifactReport } from "@/lib/artifacts/types";
 
@@ -17,54 +18,75 @@ export function BenchmarkHistory() {
   const [items, setItems] = useState<ImportedFile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const [importedName, setImportedName] = useState("");
+  const errorRef = useRef<HTMLParagraphElement>(null);
   const selected = items.find((item) => item.id === selectedId) ?? null;
 
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
+
   async function accept(file: File) {
-    const text = await file.text();
-    const parsed = parseArtifact(text);
-    if (!parsed.ok) {
-      setError(parsed.error);
-      return;
-    }
-    const id = `${file.name}-${Date.now()}`;
-    setItems((current) => [...current, { id, fileName: file.name, report: parsed.report }]);
-    setSelectedId(id);
+    setReading(true);
     setError(null);
+    try {
+      const text = await file.text();
+      const parsed = parseArtifact(text);
+      if (!parsed.ok) {
+        setError(parsed.error);
+        return;
+      }
+      const id = `${file.name}-${Date.now()}`;
+      setItems((current) => [...current, { id, fileName: file.name, report: parsed.report }]);
+      setSelectedId(id);
+      setImportedName(file.name);
+      setError(null);
+    } finally {
+      setReading(false);
+    }
   }
 
   return (
-    <>
+    <div className="page-stack">
       <PageHeader
         title="Benchmark History"
         description="Import a JSON file saved from an existing load-tool stdout. Nothing is stored after you leave this page."
+        about="benchmarks"
       />
-      <Panel title="Import a transcript">
+      <Panel title="Import a transcript" about="benchmarks" aboutLabel="About this import">
         <label
-          className="block rounded-[10px] border border-dashed border-line px-4 py-6"
+          className="block rounded-[var(--radius-control)] border border-dashed border-[var(--tf-control-border)] px-4 py-6"
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault();
             const file = event.dataTransfer.files[0];
-            if (file) void accept(file);
+            if (file && !reading) void accept(file);
           }}
         >
-          <span className="block text-sm">Choose a JSON file or drop it here. The file picker works from the keyboard.</span>
+          <span className="type-body block">
+            {reading ? "Reading file…" : "Choose a JSON file or drop it here. The file picker works from the keyboard."}
+          </span>
           <input
-            className="mt-3 block text-sm"
+            className="type-body mt-3 block"
             type="file"
             accept=".json,application/json"
+            disabled={reading}
             onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) void accept(file);
             }}
           />
         </label>
+        <p className="sr-only" aria-live="polite">
+          {importedName ? `Imported ${importedName}` : ""}
+        </p>
         {error ? (
-          <p className="mt-3 text-sm text-ink" role="alert">
+          <p ref={errorRef} tabIndex={-1} className="notice notice-danger type-body mt-3" role="alert">
             {error}
           </p>
         ) : null}
-        <div className="mt-4 text-sm leading-6 text-ink-dim">
+        <div className="type-body mt-4 text-ink-dim">
           <p>Accepted modes: core, http, compare, redis-compare, adaptive-compare.</p>
           <ul className="mt-2 list-disc pl-5">
             <li>npm run load:core</li>
@@ -73,17 +95,39 @@ export function BenchmarkHistory() {
             <li>npm run load:redis-compare</li>
             <li>npm run load:adaptive</li>
           </ul>
-          <p className="mt-2">Save stdout to a .json file. This page does not invent timestamps or historical runs.</p>
+          <p className="mt-2">Save stdout to a .json file. This page does not run benchmarks or keep files after you leave.</p>
           <p className="mt-2">Committed references stay on Algorithm Lab and Adaptive Explorer. They are not listed here as imports.</p>
         </div>
       </Panel>
       {items.length === 0 ? (
-        <p className="mt-4 rounded-[10px] border border-dashed border-line bg-panel px-4 py-8 text-sm text-ink-dim">
-          No file imported in this visit.
-        </p>
+        <div className="empty-state type-body">
+          <p>No file imported in this visit.</p>
+          <p className="mt-2">
+            Committed comparisons stay on <Link className="text-link" href="/compare">Algorithm Lab</Link>.
+          </p>
+        </div>
       ) : (
-        <div className="mt-4 grid gap-4">
+        <div className="page-stack">
           <Panel title="Imported this session">
+            <ul className="grid gap-3 md:hidden">
+              {items.map((item) => {
+                const meta = new Map(artifactMetadata(item.report).map((row) => [row.label, row.value]));
+                return (
+                  <li key={item.id} className="rounded-[var(--radius-control)] border border-line p-3">
+                    <button type="button" className="text-link type-control" onClick={() => setSelectedId(item.id)}>
+                      {item.fileName}
+                    </button>
+                    <p className="type-secondary mt-2 text-ink-dim">
+                      <Badge tone="imported">Imported this session</Badge>
+                    </p>
+                    <p className="type-data-sm mt-2 text-ink-dim">
+                      {meta.get("mode") ?? ""} {meta.get("scenario") ?? ""}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden md:block">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left text-sm">
                 <caption className="mb-2 text-left text-ink-dim">Metadata present on each imported object, plus the local file name.</caption>
@@ -102,11 +146,13 @@ export function BenchmarkHistory() {
                     return (
                       <tr key={item.id}>
                         <td className="border-b border-line px-3 py-2">
-                          <button type="button" className="underline" onClick={() => setSelectedId(item.id)}>
+                          <button type="button" className="text-link" onClick={() => setSelectedId(item.id)}>
                             {item.fileName}
                           </button>
                         </td>
-                        <td className="border-b border-line px-3 py-2">Imported this session</td>
+                        <td className="border-b border-line px-3 py-2">
+                          <Badge tone="imported">Imported this session</Badge>
+                        </td>
                         {["mode", "scenario", "algorithm", "pattern", "requests", "limit", "windowMs", "baseUrl"].map((column) => (
                           <td key={column} className="border-b border-line px-3 py-2 font-mono">
                             {meta.get(column) ?? ""}
@@ -118,11 +164,12 @@ export function BenchmarkHistory() {
                 </tbody>
               </table>
             </div>
+            </div>
           </Panel>
           {selected ? <ArtifactDetail item={selected} /> : null}
         </div>
       )}
-    </>
+    </div>
   );
 }
 

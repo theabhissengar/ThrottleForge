@@ -56,9 +56,9 @@ export function runnerLabel(id: string): string {
 }
 
 export function runnerColor(id: string): string {
-  if (id === 'adaptive') return '#3EC6D8'
-  if (id === 'static-floor') return '#8EA0BE'
-  if (id === 'static-ceiling') return '#D5DEEA'
-  if (id === 'static-oracle') return '#C4B5E0'
-  return '#A9B6C9'
+  if (id === "adaptive") return "accent";
+  if (id === "static-floor") return "floor";
+  if (id === "static-ceiling") return "ceiling";
+  if (id === "static-oracle") return "oracle";
+  return "muted";
 }

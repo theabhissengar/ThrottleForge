@@ -48,6 +48,11 @@ type Action =
   | { type: "failure"; at: number; message: string };
 
 const LiveContext = createContext<LiveState | null>(null);
+let refreshLive: (() => void) | null = null;
+
+export function requestLiveRefresh(): void {
+  refreshLive?.();
+}
 
 export function LiveProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, {
@@ -108,9 +113,14 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     };
 
     document.addEventListener("visibilitychange", onVisibility);
+    refreshLive = () => {
+      window.clearTimeout(timer);
+      void poll();
+    };
     void poll();
     return () => {
       cancelled = true;
+      refreshLive = null;
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibility);
     };
