@@ -62,8 +62,8 @@ Nest HTTP continues to use fixed-window only in M3 (no algorithm selection DI).
 | M1b | Monorepo layout (`apps/api`, npm workspaces) — this structure |
 | M2 | Memory cleanup, concurrency evidence, traffic generator |
 | M3 | Algorithm comparison (sliding window, token bucket) |
-| M4 | Redis shared fixed-window quotas; optional Docker Compose — **current** |
-| M5 | Metrics / observability |
+| M4 | Redis shared fixed-window quotas; optional Docker Compose |
+| M5 | Metrics / observability — **current** |
 | M5b | Next.js `apps/web` dashboard over HTTP APIs |
 | M6 | Adaptive policies vs static baseline |
 
@@ -79,3 +79,18 @@ No PostgreSQL, Kubernetes, Turborepo, or Nx. Redis and Docker Compose are option
 - `RATE_LIMIT_ON_REDIS_ERROR=closed` (default): HTTP 503, no quota headers, no `Retry-After`. `open`: HTTP 200, header `X-RateLimit-Mode: degraded`, quota headers omitted. The shared remaining count is not invented.
 - Connection failure: the script did not run. Command timeout: it may already have run. `maxRetriesPerRequest` is 0 and the offline queue is off, so the timed-out `EVAL` is not replayed. Fail-closed can under-admit when the script had allowed. Fail-open can over-admit when it did not run or had rejected.
 - Default Nest store remains `InMemoryStore`. `npm run test:redis` is the suite that needs `REDIS_URL`.
+
+## Metrics (Milestone 5)
+
+`GET /metrics` returns Prometheus text from a process-local registry. It is not rate limited. Production deployments should restrict it to localhost or a trusted monitoring network unless public exposure is explicitly intended. M5 does not add authentication or extra middleware for that route.
+
+Series, all low-cardinality:
+
+- `throttleforge_rate_limit_requests_total` — completed limiter decisions. Labels: `store`, `algorithm`, `result` (`allowed` or `rejected`).
+- `throttleforge_rate_limit_operation_duration_seconds` — histogram of `limiter.consume` only. Labels: `store`, `algorithm`, `result` (`allowed`, `rejected`, or `unavailable`). Buckets are cumulative: an observation increments every bound `le` where the value is less than or equal to `le`, plus `+Inf`, `_sum`, and `_count`.
+- `throttleforge_rate_limit_store_failures_total` — the store returned no decision. Labels: `store`, `algorithm`.
+- `throttleforge_rate_limit_degraded_requests_total` — fail-open admission after that failure. Labels: `store`, `algorithm`. A fail-closed 503 increments store failures only. Degraded means the store failed and the request was admitted anyway; it is not an allowed quota decision.
+
+The HTTP path records `algorithm="fixed_window"` only. `store` is `memory` or `redis`. Client ids, IP addresses, request ids, URLs, and Redis error text are never labels. Idle scrapes include `HELP` and `TYPE` without samples; a missing sample means zero.
+
+Recording happens after the limiter has already returned. A throw from the recorder is dropped and cannot change an allow, reject, or unavailable outcome. The in-memory `consume` path stays synchronous and does not add network or filesystem I/O. Limiter and policy errors are not caught by that isolation. `render()` is a memory read; if it throws, the scrape fails and quota state is unchanged.

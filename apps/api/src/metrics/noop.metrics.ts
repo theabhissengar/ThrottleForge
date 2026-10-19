@@ -1,8 +1,12 @@
-import { Decision } from '../core/decision';
-import { RateLimitMetrics } from './metrics.interface';
+import { MetricObservation, RateLimitMetrics } from './metrics.interface';
 
-/** Placeholder until Milestone 5 observability. */
+/** Records nothing. Tests can override the Nest provider with this. */
 export class NoopMetrics implements RateLimitMetrics {
-  recordAllow(_decision: Decision): void {}
-  recordReject(_decision: Decision): void {}
+  recordAllow(_observation: MetricObservation): void {}
+  recordReject(_observation: MetricObservation): void {}
+  recordStoreFailure(_observation: MetricObservation): void {}
+  recordDegraded(_observation: MetricObservation): void {}
+  render(): string {
+    return '';
+  }
 }

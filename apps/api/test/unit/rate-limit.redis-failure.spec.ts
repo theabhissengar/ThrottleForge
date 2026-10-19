@@ -65,6 +65,14 @@ function expectNoQuotaHeaders(headers: Record<string, string>): void {
   expect(headers['retry-after']).toBeUndefined();
 }
 
+function metricValue(body: string, metric: string): number | undefined {
+  const line = body.split('\n').find((entry) => entry.startsWith(`${metric}{`));
+  if (!line) {
+    return undefined;
+  }
+  return Number(line.trim().split(/\s+/).pop());
+}
+
 describe('Redis failure HTTP contract', () => {
   describe('fail-closed', () => {
     it.each([
@@ -86,6 +94,20 @@ describe('Redis failure HTTP contract', () => {
         expectNoQuotaHeaders(res.headers);
         expect(res.headers['x-ratelimit-mode']).toBeUndefined();
         expect(client.calls).toBe(1);
+
+        const metrics = await request(app.getHttpServer()).get('/metrics').expect(200);
+        expect(
+          metricValue(metrics.text, 'throttleforge_rate_limit_store_failures_total'),
+        ).toBe(1);
+        expect(metrics.text).toContain('store="redis"');
+        expect(metrics.text).toContain('algorithm="fixed_window"');
+        expect(metrics.text).not.toMatch(
+          /^throttleforge_rate_limit_degraded_requests_total\{/m,
+        );
+        expect(metrics.text).not.toMatch(/^throttleforge_rate_limit_requests_total\{/m);
+        expect(metrics.text).toContain(
+          'throttleforge_rate_limit_operation_duration_seconds_count{algorithm="fixed_window",result="unavailable",store="redis"} 1',
+        );
       } finally {
         await app.close();
       }
@@ -109,6 +131,18 @@ describe('Redis failure HTTP contract', () => {
         expect(res.headers['x-ratelimit-mode']).toBe('degraded');
         expectNoQuotaHeaders(res.headers);
         expect(client.calls).toBe(1);
+
+        const metrics = await request(app.getHttpServer()).get('/metrics').expect(200);
+        expect(
+          metricValue(metrics.text, 'throttleforge_rate_limit_store_failures_total'),
+        ).toBe(1);
+        expect(
+          metricValue(metrics.text, 'throttleforge_rate_limit_degraded_requests_total'),
+        ).toBe(1);
+        expect(metrics.text).not.toMatch(/^throttleforge_rate_limit_requests_total\{/m);
+        expect(metrics.text).toContain(
+          'throttleforge_rate_limit_operation_duration_seconds_count{algorithm="fixed_window",result="unavailable",store="redis"} 1',
+        );
       } finally {
         await app.close();
       }

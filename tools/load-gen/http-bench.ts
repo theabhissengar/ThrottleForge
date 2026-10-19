@@ -38,6 +38,8 @@ Notes:
   - 429 counts as expectedRateLimited, not transportError.
   - many-clients needs ALLOW_TEST_CLIENT_ID=true and NODE_ENV=development|test on the server.
   - Do not compare these numbers with core-bench results (HTTP includes Nest/Express overhead).
+  - After the run, one GET /metrics is scraped. That scrape is not part of latency.
+    A scrape error is printed and does not change the exit code.
 `);
   process.exit(1);
 }
@@ -193,6 +195,7 @@ async function main(): Promise<void> {
   const wallEnd = process.hrtime.bigint();
   const elapsedMs = Number(wallEnd - wallStart) / 1e6;
   const latency = summarizeLatencies(latencies);
+  const observationalMetrics = await scrapeMetrics(config.baseUrl);
 
   console.log(
     JSON.stringify(
@@ -215,9 +218,10 @@ async function main(): Promise<void> {
             ? Number(((config.requests / elapsedMs) * 1000).toFixed(2))
             : null,
         latency,
+        observationalMetrics,
         identityNote:
           'many-clients requires ALLOW_TEST_CLIENT_ID=true and NODE_ENV=development|test; otherwise distinct X-Test-Client-Id values share the IP bucket',
-        note: 'Observational only; 429 is expectedRateLimited, not an error. Do not compare with core-bench.',
+        note: 'Observational only; 429 is expectedRateLimited, not an error. Do not compare with core-bench. observationalMetrics is a single post-run scrape and is not a pass/fail check.',
       },
       null,
       2,
@@ -226,6 +230,67 @@ async function main(): Promise<void> {
 
   if (transportErrors > 0) {
     process.exitCode = 2;
+  }
+}
+
+interface ObservationalMetrics {
+  requestsAllowed: number | null;
+  requestsRejected: number | null;
+  storeFailures: number | null;
+  degraded: number | null;
+  scrapeError: string | null;
+}
+
+function sumMetric(body: string, metric: string, required?: string): number {
+  let total = 0;
+  for (const line of body.split('\n')) {
+    if (!line.startsWith(`${metric}{`) && !line.startsWith(`${metric} `)) {
+      continue;
+    }
+    if (required !== undefined && !line.includes(required)) {
+      continue;
+    }
+    const value = Number(line.trim().split(/\s+/).pop());
+    if (Number.isFinite(value)) {
+      total += value;
+    }
+  }
+  return total;
+}
+
+async function scrapeMetrics(baseUrl: string): Promise<ObservationalMetrics> {
+  const empty = {
+    requestsAllowed: null,
+    requestsRejected: null,
+    storeFailures: null,
+    degraded: null,
+  };
+  try {
+    const res = await fetch(`${baseUrl}/metrics`);
+    if (!res.ok) {
+      return { ...empty, scrapeError: `HTTP ${res.status}` };
+    }
+    const body = await res.text();
+    return {
+      requestsAllowed: sumMetric(
+        body,
+        'throttleforge_rate_limit_requests_total',
+        'result="allowed"',
+      ),
+      requestsRejected: sumMetric(
+        body,
+        'throttleforge_rate_limit_requests_total',
+        'result="rejected"',
+      ),
+      storeFailures: sumMetric(body, 'throttleforge_rate_limit_store_failures_total'),
+      degraded: sumMetric(body, 'throttleforge_rate_limit_degraded_requests_total'),
+      scrapeError: null,
+    };
+  } catch (err) {
+    return {
+      ...empty,
+      scrapeError: err instanceof Error ? err.message : String(err),
+    };
   }
 }
 

@@ -12,8 +12,8 @@ import {
   SystemClock,
   validateFixedWindowPolicy,
 } from '../core';
-import { RateLimitMetrics } from '../metrics/metrics.interface';
-import { NoopMetrics } from '../metrics/noop.metrics';
+import { MetricObservation, RateLimitMetrics } from '../metrics/metrics.interface';
+import { PrometheusRateLimitMetrics } from '../metrics/prometheus.metrics';
 import {
   ClosableRedisEvalClient,
   RedisConnectionOptions,
@@ -104,8 +104,10 @@ export class RateLimitService implements OnModuleInit, OnModuleDestroy {
 
   consume(clientId: string): RateLimitConsumeResult | Promise<RateLimitConsumeResult> {
     if (this.syncLimiter) {
+      const start = process.hrtime.bigint();
       const decision = this.syncLimiter.consume(clientId);
-      this.record(decision);
+      const durationSeconds = secondsSince(start);
+      this.recordDecision(decision, durationSeconds);
       return { type: 'ok', decision };
     }
     if (!this.asyncLimiter) {
@@ -123,20 +125,58 @@ export class RateLimitService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async consumeRedis(clientId: string): Promise<RateLimitConsumeResult> {
+    const start = process.hrtime.bigint();
     const outcome: AsyncConsumeOutcome = await this.asyncLimiter!.consume(clientId);
+    const durationSeconds = secondsSince(start);
     if (outcome.type === 'ok') {
-      this.record(outcome.decision);
+      this.recordDecision(outcome.decision, durationSeconds);
+    } else {
+      this.recordUnavailable(durationSeconds);
     }
     return outcome;
   }
 
-  private record(decision: Decision): void {
-    if (decision.allowed) {
-      this.metrics.recordAllow(decision);
-    } else {
-      this.metrics.recordReject(decision);
+  private observation(durationSeconds: number): MetricObservation {
+    return {
+      store: this.storeKind,
+      algorithm: 'fixed_window',
+      durationSeconds,
+    };
+  }
+
+  private recordDecision(decision: Decision, durationSeconds: number): void {
+    const observation = this.observation(durationSeconds);
+    this.recordQuietly(() => {
+      if (decision.allowed) {
+        this.metrics.recordAllow(observation);
+      } else {
+        this.metrics.recordReject(observation);
+      }
+    });
+  }
+
+  private recordUnavailable(durationSeconds: number): void {
+    const observation = this.observation(durationSeconds);
+    this.recordQuietly(() => {
+      this.metrics.recordStoreFailure(observation);
+      if (this.onRedisError === 'open') {
+        this.metrics.recordDegraded(observation);
+      }
+    });
+  }
+
+  /** Drops an instrumentation error after the limiter has already returned. */
+  private recordQuietly(record: () => void): void {
+    try {
+      record();
+    } catch {
+      // Quota decisions must not depend on metrics.
     }
   }
+}
+
+function secondsSince(start: bigint): number {
+  return Number(process.hrtime.bigint() - start) / 1e9;
 }
 
 export const defaultRateLimitProviders = [
@@ -150,7 +190,7 @@ export const defaultRateLimitProviders = [
   },
   {
     provide: RATE_LIMIT_METRICS,
-    useClass: NoopMetrics,
+    useClass: PrometheusRateLimitMetrics,
   },
   {
     provide: RATE_LIMIT_STORE_KIND,

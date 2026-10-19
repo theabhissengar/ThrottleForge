@@ -12,6 +12,8 @@ Locally runnable API rate-limiting engine in an **npm workspaces** monorepo.
 
 **Milestone 4** shares that fixed-window quota across processes through Redis. The in-memory limiters stay synchronous. Redis is optional and local; the default Nest store is still memory.
 
+**Milestone 5** adds a process-local Prometheus text endpoint at `GET /metrics` for fixed-window allows, rejections, consume latency, store failures, and fail-open admissions. Restrict that route to localhost or a trusted monitoring network unless public exposure is explicitly intended.
+
 ## Requirements
 
 - Node.js LTS
@@ -47,7 +49,10 @@ Root scripts proxy to `@throttleforge/api`. Default listen address: `http://loca
 | Route | Rate limited? |
 |-------|----------------|
 | `GET /health` | No |
+| `GET /metrics` | No |
 | `GET /api/demo` | Yes |
+
+`GET /metrics` is Prometheus text (`text/plain; version=0.0.4`). It reports aggregate fixed-window series only: allowed and rejected decisions, consume latency, Redis store failures, and fail-open admissions. Labels are `store` (`memory` or `redis`), `algorithm` (`fixed_window` on this HTTP path), and `result` where the series has one. Client ids, IP addresses, request ids, and URLs are not labels. A missing sample means zero. Histogram buckets are cumulative. Fail-open responses increment the degraded series and the store-failure series; they are not counted as allowed. Production deployments should restrict `/metrics` to localhost or a trusted monitoring network unless public exposure is explicitly intended. This milestone does not add authentication for that route.
 
 ### Configuration (environment)
 
@@ -148,7 +153,7 @@ Correctness coverage:
 
 1. **Unit** — policy validation (FW/SW/TB), under/exact/over quota, fractional SW `remaining`, TB refill/`resetAt±1`, multi-client, FakeClock boundaries, store purge budgets.
 2. **Concurrency** — parallel `consume()` for fixed, sliding, and token-bucket; allowed count matches sync inventory.
-3. **Integration** — HTTP `200` / `429` with exact rate-limit headers (fixed-window Nest shell). Redis failures in the default suite use a fake client: 503 when closed, degraded 200 when open.
+3. **Integration** — HTTP `200` / `429` with exact rate-limit headers (fixed-window Nest shell), plus `GET /metrics`. Redis failures in the default suite use a fake client: 503 when closed, degraded 200 when open. Those failures increment store-failure metrics and, only in open mode, the degraded metric.
 4. **Redis** — `npm run test:redis` with `REDIS_URL` set. Not part of `npm test`.
 
 Local Redis:
@@ -206,13 +211,14 @@ Start a second process with `PORT=3001` and the same Redis settings.
 - **IP identity is not an anti-abuse control** without a trusted network path.
 - **Redis is fixed-window only.** One Lua `EVAL` checks, increments only on allow, resets a stale window, and sets a relative TTL. Instances need synchronized clocks. Active keys in the current window are still unbounded; expiry removes idle windows.
 - Counters are **transient**; there is no relational database by design.
+- **`GET /metrics` is unauthenticated**, same as `/health`, and it is not behind the rate-limit guard. Restrict it to localhost or a trusted monitoring network unless public exposure is explicitly intended.
 - **No frontend yet.** `apps/web` will communicate with the API over HTTP only (Milestone 5b).
 
 ## API package layout
 
 - `apps/api/src/core/` — Nest-free policy, clock, Decision, fixed/sliding/token-bucket limiters, in-memory stores, and the Redis fixed-window store
 - `apps/api/src/rate-limit/` — Nest module, guard, identity adapter, service facade, optional ioredis client
-- `apps/api/src/demo/`, `apps/api/src/health/` — sample routes
+- `apps/api/src/demo/`, `apps/api/src/health/`, `apps/api/src/metrics/` — sample routes and the Prometheus scrape
 - `apps/api/test/unit`, `concurrency`, `integration`
 - `tools/load-gen/` — core bench, algorithm compare, Redis fixed-window compare, HTTP load generators
 
@@ -220,8 +226,8 @@ Start a second process with `PORT=3001` and the same Redis settings.
 
 2. ~~Bounded memory + local traffic generator~~  
 3. ~~Sliding-window / token-bucket comparison~~  
-4. ~~Redis shared fixed-window quotas + optional Docker Compose~~ (this milestone)  
-5. Metrics / optional local Prometheus–Grafana  
+4. ~~Redis shared fixed-window quotas + optional Docker Compose~~  
+5. ~~Metrics / observability (`GET /metrics`)~~ (this milestone)  
 5b. Next.js `apps/web` dashboard (HTTP client to the API)  
 6. Adaptive policies only if measurements justify them vs a static baseline  
 

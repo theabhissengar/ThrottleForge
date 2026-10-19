@@ -83,6 +83,8 @@ npm run load:http -- --baseUrl http://127.0.0.1:3000 --requests 40 --concurrency
 
 `many-clients` needs `ALLOW_TEST_CLIENT_ID=true` and `NODE_ENV=development|test` on the server.
 
+After the pool finishes, the bench does one `GET /metrics` and prints `observationalMetrics` (`requestsAllowed`, `requestsRejected`, `storeFailures`, `degraded`, or `scrapeError`). That scrape is outside the latency percentiles. A scrape failure or a counter mismatch does not change the exit code. Exit code 2 still means demo-path transport errors only.
+
 ## Interpreting metrics
 
 - Throughput and p50/p95/p99 are machine-dependent and noisy.

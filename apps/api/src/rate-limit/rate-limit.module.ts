@@ -15,6 +15,7 @@ import { NestIdentityExtractor } from './nest-identity.extractor';
 import { RateLimitGuard } from './rate-limit.guard';
 import {
   defaultRateLimitProviders,
+  RATE_LIMIT_METRICS,
   RateLimitService,
 } from './rate-limit.service';
 
@@ -45,6 +46,11 @@ import {
     RateLimitService,
     RateLimitGuard,
   ],
-  exports: [RateLimitService, RateLimitGuard, NestIdentityExtractor],
+  exports: [
+    RateLimitService,
+    RateLimitGuard,
+    NestIdentityExtractor,
+    RATE_LIMIT_METRICS,
+  ],
 })
 export class RateLimitModule {}
