@@ -6,7 +6,7 @@ import { useHelp } from "@/components/help-dialog";
 export function PageHeader({ title, description, about }: { title: string; description: string; about?: string }) {
   return (
     <header className="flex flex-wrap items-start justify-between gap-3">
-      <div className="max-w-[65ch]">
+      <div className="min-w-0 flex-1">
         <h1 className="type-display">{title}</h1>
         <p className="type-body mt-2 text-ink-dim">{description}</p>
       </div>
@@ -133,16 +133,17 @@ export function DataTable({
 }) {
   const stack = columns.length <= 4;
   const wide = columns.length > 4;
+  const numeric = columns.map((_, columnIndex) => columnIndex > 0 && rows.every((row) => isNumeric(row[columnIndex] ?? "")));
   return (
     <div>
       {wide ? <p className="type-secondary mb-2 text-ink-dim md:sr-only">More columns</p> : null}
       <div className={wide ? "table-scroll" : undefined}>
-        <table className={`w-full border-collapse text-left ${stack ? "stack-narrow" : ""}`}>
+        <table className={`data-table ${stack ? "stack-narrow" : ""}`}>
           <caption className="type-secondary mb-2 text-left text-ink-dim">{caption}</caption>
           <thead>
             <tr>
-              {columns.map((column) => (
-                <th key={column} scope="col" className="type-secondary border-b border-line px-3 py-2 font-medium">
+              {columns.map((column, columnIndex) => (
+                <th key={column} scope="col" className={`type-secondary ${numeric[columnIndex] ? "is-numeric" : "is-text"}`}>
                   {column}
                 </th>
               ))}
@@ -150,12 +151,12 @@ export function DataTable({
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={`${row.join("|")}-${index}`} className="hover:bg-hover">
+              <tr key={`${row.join("|")}-${index}`}>
                 {row.map((cell, cellIndex) => (
                   <td
                     key={`${columns[cellIndex]}-${index}`}
                     data-label={columns[cellIndex]}
-                    className={`border-b border-line px-3 py-2 ${isNumeric(cell) ? "type-data text-right" : "type-body"}`}
+                    className={`${numeric[cellIndex] ? "type-data is-numeric" : "type-body is-text"}`}
                   >
                     {cell}
                   </td>

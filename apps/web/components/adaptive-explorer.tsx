@@ -36,7 +36,7 @@ export function AdaptiveExplorer({
       <Callout title="Synthetic capacity">
         The plant capacity exists only in the load tool. Saturated means the window admitted exactly the limit in force. Congested means admitted work exceeded that synthetic capacity. Rejects are not congestion. On a congested window the controller halves the limit down to the floor and holds once. It increases by one, up to the ceiling, only when the window was saturated and not congested. The oracle is a reference equal to the scenario&apos;s initial capacity. It is not a deployable policy.
       </Callout>
-      <p className="type-body max-w-[65ch] text-ink-dim">
+      <p className="type-body text-ink-dim">
         Normalized regret is regret divided by offered work. Floor and ceiling are the pass baselines. The oracle matches the scenario&apos;s initial synthetic capacity and is not a policy this API runs.
       </p>
       <p className="type-body flex flex-wrap items-center gap-3">
@@ -49,9 +49,9 @@ export function AdaptiveExplorer({
         </p>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {MEAN_RUNNERS.map((runner) => (
-            <article key={runner}>
+            <article key={runner} className="stat-tile">
               <h3 className="type-secondary text-ink-dim">{runnerLabel(runner)}</h3>
-              <p className="type-metric mt-2 break-all">{formatMean(runner, report.correctness.means[runner])}</p>
+              <p className="type-figure mt-2">{formatMean(runner, report.correctness.means[runner])}</p>
             </article>
           ))}
         </div>
@@ -62,7 +62,7 @@ export function AdaptiveExplorer({
             <legend className="type-card mb-3">Selected scenario</legend>
             <div className="flex flex-wrap gap-2">
               {scenarios.map((entry) => (
-                <label key={entry.scenario} className="type-control flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] border border-line bg-panel px-3 py-2">
+                <label key={entry.scenario} className="choice-card is-inline type-control">
                   <input
                     type="radio"
                     name="adaptive-scenario"

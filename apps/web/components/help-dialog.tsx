@@ -66,7 +66,7 @@ export function HelpProvider({ children }: { children: ReactNode }) {
             <section key={section.heading} id={section.heading === topic.sections[0]?.heading ? `help-${topic.id}` : undefined}>
               <h3 className="type-card">{section.heading}</h3>
               {section.paragraphs.map((paragraph) => (
-                <p key={paragraph} className="type-body mt-2 max-w-[65ch] text-ink-dim">
+                <p key={paragraph} className="type-body mt-2 text-ink-dim">
                   {paragraph}
                 </p>
               ))}
@@ -88,12 +88,12 @@ export function DocsIndex() {
     <div className="page-stack">
       <header>
         <h1 className="type-display">Documentation</h1>
-        <p className="type-body mt-2 max-w-[65ch] text-ink-dim">
-          Short explanations of the figures this dashboard can actually show.
+        <p className="type-body mt-2 text-ink-dim">
+          Plain-language notes for each page. They describe only what you can see on the screen.
         </p>
       </header>
-      <nav aria-label="Documentation topics">
-        <ul className="grid gap-2">
+      <nav aria-label="Documentation topics" className="card">
+        <ul className="grid gap-2 sm:grid-cols-2">
           {HELP_TOPICS.map((topic) => (
             <li key={topic.id}>
               <a className="text-link type-control" href={`#${topic.id}`}>
@@ -104,13 +104,13 @@ export function DocsIndex() {
         </ul>
       </nav>
       {HELP_TOPICS.map((topic) => (
-        <section key={topic.id} id={topic.id} className="grid gap-3">
+        <section key={topic.id} id={topic.id} className="card grid gap-3">
           <h2 className="type-section">{topic.title}</h2>
           {topic.sections.map((section) => (
             <div key={section.heading}>
               <h3 className="type-card">{section.heading}</h3>
               {section.paragraphs.map((paragraph) => (
-                <p key={paragraph} className="type-body mt-2 max-w-[65ch] text-ink-dim">
+                <p key={paragraph} className="type-body mt-2 text-ink-dim">
                   {paragraph}
                 </p>
               ))}

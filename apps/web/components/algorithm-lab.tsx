@@ -20,14 +20,14 @@ export function AlgorithmLab({
         description="One ordered trace, replayed from fresh state on the fixed window, the weighted sliding-window counter, and the token bucket. Unequal allow counts are expected."
         about="algorithms"
       />
-      <p className="type-body max-w-[65ch] text-ink-dim">
+      <p className="type-body text-ink-dim">
         A fixed window resets on a boundary. The sliding-window counter still counts the previous window. The token bucket refills smoothly. Unequal allow counts are expected.
       </p>
       <fieldset>
         <legend className="type-card mb-3">Scenario</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {COMPARE_SCENARIOS.map((id) => (
-            <label key={id} className="flex min-h-11 gap-3 rounded-[var(--radius-control)] border border-line bg-panel px-3 py-2">
+            <label key={id} className="choice-card">
               <input type="radio" name="scenario" value={id} checked={scenario === id} onChange={() => setScenario(id)} />
               <span>
                 <span className="type-control block">{SCENARIO_INTENTS[id]}</span>

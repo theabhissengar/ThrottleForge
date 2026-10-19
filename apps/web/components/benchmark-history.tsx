@@ -14,6 +14,8 @@ type ImportedFile = {
   report: ArtifactReport;
 };
 
+const NUMERIC_META = new Set(["requests", "limit", "windowMs"]);
+
 export function BenchmarkHistory() {
   const [items, setItems] = useState<ImportedFile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function BenchmarkHistory() {
       />
       <Panel title="Import a transcript" about="benchmarks" aboutLabel="About this import">
         <label
-          className="block rounded-[var(--radius-control)] border border-dashed border-[var(--tf-control-border)] px-4 py-6"
+          className="import-drop"
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => {
             event.preventDefault();
@@ -128,15 +130,15 @@ export function BenchmarkHistory() {
               })}
             </ul>
             <div className="hidden md:block">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
-                <caption className="mb-2 text-left text-ink-dim">Metadata present on each imported object, plus the local file name.</caption>
+            <div className="table-scroll">
+              <table className="data-table">
+                <caption className="type-secondary mb-2 text-left text-ink-dim">Metadata present on each imported object, plus the local file name.</caption>
                 <thead>
                   <tr>
-                    <th className="border-b border-line px-3 py-2">File</th>
-                    <th className="border-b border-line px-3 py-2">Badge</th>
+                    <th className="type-secondary is-text">File</th>
+                    <th className="type-secondary is-text">Badge</th>
                     {["mode", "scenario", "algorithm", "pattern", "requests", "limit", "windowMs", "baseUrl"].map((column) => (
-                      <th key={column} className="border-b border-line px-3 py-2">{column}</th>
+                      <th key={column} className={`type-secondary ${NUMERIC_META.has(column) ? "is-numeric" : "is-text"}`}>{column}</th>
                     ))}
                   </tr>
                 </thead>
@@ -145,16 +147,16 @@ export function BenchmarkHistory() {
                     const meta = new Map(artifactMetadata(item.report).map((row) => [row.label, row.value]));
                     return (
                       <tr key={item.id}>
-                        <td className="border-b border-line px-3 py-2">
+                        <td className="is-text">
                           <button type="button" className="text-link" onClick={() => setSelectedId(item.id)}>
                             {item.fileName}
                           </button>
                         </td>
-                        <td className="border-b border-line px-3 py-2">
+                        <td className="is-text">
                           <Badge tone="imported">Imported this session</Badge>
                         </td>
                         {["mode", "scenario", "algorithm", "pattern", "requests", "limit", "windowMs", "baseUrl"].map((column) => (
-                          <td key={column} className="border-b border-line px-3 py-2 font-mono">
+                          <td key={column} className={NUMERIC_META.has(column) ? "type-data is-numeric" : "type-data-sm is-text"}>
                             {meta.get(column) ?? ""}
                           </td>
                         ))}

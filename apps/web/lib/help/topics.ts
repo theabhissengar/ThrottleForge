@@ -15,17 +15,17 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: "Using ThrottleForge",
     sections: [
       {
-        heading: "What this dashboard is",
+        heading: "What you are looking at",
         paragraphs: [
-          "ThrottleForge is a read-only view of one API process. It does not sign you in, store history, or add up several processes into a cluster total.",
-          "Live numbers come from this process's /health and /metrics endpoints. Algorithm Lab and Adaptive Explorer show transcripts that were saved with the project. Benchmark History only shows a file you import during this visit.",
+          "This screen shows what one running copy of the app is doing right now. You do not sign in. Nothing here is saved as a history. Numbers from several computers are not added together.",
+          "The live numbers are read from that one running copy. Algorithm Lab and Adaptive Explorer show example results that were saved with this project. Benchmark History only shows a file you open during this visit. When you leave, that file is not kept.",
         ],
       },
       {
-        heading: "What a chart is telling you",
+        heading: "How to read a chart",
         paragraphs: [
-          "Chart axes start at zero. A series is named in the legend and repeated in the table under the chart. Color is paired with a solid, dashed, or dotted stroke where two series share a chart.",
-          "The table is the text alternative. A tooltip repeats a point. It is not the only copy of that point.",
+          "Every chart starts at zero, so a small bar is really small. Each color has a name in the key, and the same numbers are written in the table under the chart. When two lines share a chart, one is solid, one is dashed, and one may be dotted, so you can tell them apart without relying on color.",
+          "Use the table if you cannot use the chart. Hovering a point repeats one number. The table still has every number.",
         ],
       },
     ],
@@ -35,25 +35,25 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: "Overview",
     sections: [
       {
-        heading: "What this page is for",
+        heading: "What this page shows",
         paragraphs: [
-          "Overview shows fixed-window decisions recorded by this API process. The counts are cumulative counters from the latest successful scrape, plus the change since the previous scrape in this browser tab.",
+          "Overview counts how many requests this running app allowed or turned away. The big numbers are totals since the app started. The smaller note is how much those totals changed since the last refresh in this browser tab.",
         ],
       },
       {
-        heading: "Allowed, rejected, degraded, and store failures",
+        heading: "What the counts mean",
         paragraphs: [
-          "Allowed means the limiter finished and allowed the request. Rejected means the limiter finished and rejected it.",
-          "A store failure happens before a quota decision. A degraded admission is a fail-open response after that failure. A degraded request is not an allowed quota decision.",
-          "The status strip says whether the API is reachable and whether metrics are collecting, live, stale, or unreachable. Stale means the last good scrape is older than 10 seconds. The last numbers stay on screen.",
+          "Allowed means the limit check finished and let the request through. Rejected means the limit check finished and turned the request away.",
+          "A store failure means the place that remembers the count had a problem before a yes-or-no decision was made. A degraded admission means the app let the request through because that memory failed. That is not the same as an allowed request.",
+          "The line at the top says whether the app can be reached, and whether the numbers are still loading, up to date, old, or unavailable. Old means the last good reading is more than 10 seconds ago. The last numbers stay on the screen.",
         ],
       },
       {
-        heading: "No sample, reported zero, and unpublished settings",
+        heading: "When a number is missing",
         paragraphs: [
-          "No sample means this scrape did not include that series. The card says No sample. A reported 0 is a real zero from the process.",
-          "Limit, window, and Redis failure mode are not published by the API. Those rows stay labeled that way. They are not zeros.",
-          "Limiter operation time is seconds inside one limiter consume. It is not handler latency, queue time, or end-to-end response time. The bars are cumulative histogram buckets, not an exact percentile. The mean is histogram sum divided by count, and it stays unavailable when the count is not positive.",
+          "“No sample” means this reading did not include that count. “0” means the app really reported zero.",
+          "The limit, the time window, and the Redis failure setting are not sent by the app. Those rows say so. They are not zeros.",
+          "The time chart is how long the limit check itself took. It is not how long the whole request took. The bars are running totals of those times, not one typical time. An average is shown only when there is at least one measurement.",
         ],
       },
     ],
@@ -63,24 +63,24 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: "Algorithm Lab",
     sections: [
       {
-        heading: "What this page is for",
+        heading: "What this page shows",
         paragraphs: [
-          "Algorithm Lab replays one ordered trace from fresh state on three limiters. Unequal allow counts are expected. The page shows a committed reference, not a live ranking.",
+          "This page plays the same list of requests, from a fresh start, through three different ways of limiting traffic. They are not expected to allow the same number of requests. These are saved example results, not a live contest.",
         ],
       },
       {
-        heading: "The three algorithms",
+        heading: "The three ways of limiting",
         paragraphs: [
-          "A fixed window counts requests until a hard time boundary, then starts again.",
-          "A weighted sliding-window counter still counts part of the previous window, and that share decays as the new window advances.",
-          "A token bucket refills capacity smoothly. A burst is allowed only while tokens remain.",
+          "A fixed window counts requests until a set time is up, then starts over from zero.",
+          "A sliding window still counts part of the previous time period. That leftover share fades as the new period moves forward.",
+          "A token bucket refills steadily. A short burst is allowed only while there is still room in the bucket.",
         ],
       },
       {
-        heading: "Decisions and timings",
+        heading: "Counts and timings",
         paragraphs: [
-          "The decisions section is allowed, rejected, unexpected errors, and store size. Those are correctness counts.",
-          "Elapsed time, throughput, and percentiles are observational timings from the machine that captured the file. They are not a ranking and they are not comparable to load:http or load:core.",
+          "Allowed, rejected, unexpected errors, and how much memory was used are the decision counts. They tell you what the limiter decided.",
+          "Elapsed time, speed, and the percentile times only describe how long the saved run took on the computer that recorded it. They are not a ranking, and they should not be compared with the other benchmark commands.",
         ],
       },
     ],
@@ -90,17 +90,17 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: "Benchmark History",
     sections: [
       {
-        heading: "What this page is for",
+        heading: "What this page does",
         paragraphs: [
-          "Import a JSON file saved from an existing load-tool stdout. The page does not run benchmarks, does not open a shell, and does not keep the file after you leave.",
-          "Committed references stay on Algorithm Lab and Adaptive Explorer. An imported row is marked Imported this session.",
+          "You can open a JSON file that was saved from a benchmark run. This page does not run the benchmark. It does not open a terminal. It does not keep the file after you leave.",
+          "The saved examples stay on Algorithm Lab and Adaptive Explorer. A file you open here is marked “Imported this session.”",
         ],
       },
       {
-        heading: "Accepted files",
+        heading: "Which files work",
         paragraphs: [
-          "The file must be one JSON object with a mode of core, http, compare, redis-compare, or adaptive-compare. Those files come from npm run load:core, load:http, load:compare, load:redis-compare, and load:adaptive.",
-          "If the file is invalid, the page shows the parser message. It does not invent timestamps or historical runs.",
+          "The file must be one JSON object. Its mode must be one of: core, http, compare, redis-compare, or adaptive-compare. Those files come from the load commands listed on the page.",
+          "If the file is not valid, the page shows the exact error. It does not invent times or old runs.",
         ],
       },
     ],
@@ -110,18 +110,18 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: "Adaptive Explorer",
     sections: [
       {
-        heading: "What this page is for",
+        heading: "What this page shows",
         paragraphs: [
-          "Adaptive Explorer shows one recorded synthetic experiment. The controller is not on the HTTP request path. These figures are not a production capacity, latency, or SLO result.",
+          "This page shows one saved practice run of a limit that adjusts itself. That automatic limit is not used on real requests to the app. These numbers are not a promise about how fast or how large a real system would be.",
         ],
       },
       {
-        heading: "Regret, baselines, and the oracle",
+        heading: "How to read the scores",
         paragraphs: [
-          "Normalized regret is regret divided by offered work. Regret is shortfall plus excess against the synthetic capacity. Lower means the runner stayed closer to that capacity.",
-          "Static floor and static ceiling are the baselines the pass compares. The oracle is a reference set to the scenario's initial capacity. It is not a policy this API runs.",
-          "The pass-set mean uses five scenarios. Mixed is excluded. The per-client reference is not a pass baseline.",
-          "Plant capacity is not in the transcript and is not drawn. Saturated means the window admitted exactly the limit in force. Congested means admitted work exceeded that synthetic capacity. Rejects are not congestion.",
+          "The number on the cards is regret divided by the work that was offered. It shows how far the limit was from the practice target. A lower number means it stayed closer.",
+          "Floor and ceiling are the two simple limits this practice run is compared with. The oracle is a reference set to the starting target. The app does not run the oracle.",
+          "The average uses five situations. The one named mixed is left out. The per-client reference is not one of the comparison limits.",
+          "The practice target is not drawn on the chart. Saturated means the window accepted exactly the limit then in use. Congested means more work was accepted than that practice target. A rejection is not the same thing as congestion.",
         ],
       },
     ],

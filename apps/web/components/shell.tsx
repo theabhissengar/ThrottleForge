@@ -7,7 +7,7 @@ import { HelpProvider, useHelp } from "@/components/help-dialog";
 import { LiveProvider, useFreshness, useLive } from "@/components/live-provider";
 import { Wordmark } from "@/components/logo";
 import { AdaptiveIcon, BenchmarkIcon, ChevronIcon, CompareIcon, LearnIcon, OverviewIcon } from "@/components/nav-icons";
-import { markTip, ThemeToggle, themeAnnouncement } from "@/components/theme-toggle";
+import { markTip, ThemeMenu, themeAnnouncement } from "@/components/theme-toggle";
 import { topicForPath } from "@/lib/help/topics";
 import { formatAge } from "@/lib/metrics/format";
 import {
@@ -89,13 +89,13 @@ function ShellFrame({ children }: { children: ReactNode }) {
         {announcement}
       </p>
       <div className="flex min-h-full">
-        <aside aria-label="Primary" className="sidebar sticky top-0 h-screen shrink-0 flex-col overflow-hidden border-r border-line bg-panel px-2 py-4">
+        <aside aria-label="Primary" className="sidebar glass sticky top-0 h-screen shrink-0 flex-col overflow-hidden border-r border-line px-2 py-4">
           <div className="sidebar-header flex items-center justify-between gap-2">
             <Wordmark clip />
             <button
               id={SIDEBAR_BUTTON_ID}
               type="button"
-              className="btn hit has-tip shrink-0"
+              className="collapse-toggle has-tip shrink-0"
               suppressHydrationWarning
               aria-expanded={!collapsed}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -103,31 +103,27 @@ function ShellFrame({ children }: { children: ReactNode }) {
               onMouseEnter={markTip}
               onFocus={markTip}
             >
-              <ChevronIcon direction={collapsed ? "right" : "left"} />
+              <span className="collapse-glyph">
+                <ChevronIcon direction={collapsed ? "right" : "left"} size={16} />
+              </span>
               <span className="rail-tip" aria-hidden="true">
                 {collapsed ? "Expand sidebar" : "Collapse sidebar"}
               </span>
             </button>
           </div>
-          <nav aria-label="Dashboard" className="mt-10 flex flex-1 flex-col gap-1 overflow-y-auto">
+          <nav aria-label="Dashboard" className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto">
             <NavLinks />
           </nav>
-          <div className="mt-4 grid gap-2">
-            <div className="theme-expanded">
-              <ThemeToggle variant="segmented" name="theme-sidebar" choice={themeChoice} onChange={chooseTheme} />
-            </div>
-            <div className="theme-collapsed">
-              <ThemeToggle variant="popover" choice={themeChoice} onChange={chooseTheme} />
-            </div>
+          <div className="mt-4">
             <button
               type="button"
-              className="btn hit has-tip w-full justify-center"
+              className="nav-link has-tip type-control w-full"
               aria-current={pathname.startsWith("/docs") ? "page" : undefined}
               onClick={() => help.open(topicForPath(pathname))}
               onMouseEnter={markTip}
               onFocus={markTip}
             >
-              <span className="learn-icon">
+              <span className="nav-icon-slot">
                 <LearnIcon />
               </span>
               <span className="footer-label">Learn</span>
@@ -138,8 +134,7 @@ function ShellFrame({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <MobileBar onLearn={() => help.open(topicForPath(pathname))} themeChoice={themeChoice} onTheme={chooseTheme} />
-          <StatusStrip />
+          <AppHeader onLearn={() => help.open(topicForPath(pathname))} themeChoice={themeChoice} onTheme={chooseTheme} />
           <main id="content" className="content-frame min-w-0 flex-1">
             {children}
           </main>
@@ -172,7 +167,9 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             onMouseEnter={markTip}
             onFocus={markTip}
           >
-            <Icon className="shrink-0" />
+            <span className="nav-icon-slot">
+              <Icon />
+            </span>
             <span className="nav-label">{item.label}</span>
             <span className="rail-tip" aria-hidden="true">
               {item.label}
@@ -184,7 +181,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function MobileBar({
+function AppHeader({
   onLearn,
   themeChoice,
   onTheme,
@@ -196,21 +193,57 @@ function MobileBar({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const pathname = usePathname();
   const titleId = useId();
+  const live = useLive();
+  const [now, setNow] = useState<number | null>(null);
+  const freshness = useFreshness(now ?? live.lastSuccessAt ?? 0);
 
   useEffect(() => {
     dialogRef.current?.close();
   }, [pathname]);
 
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const freshnessText =
+    freshness === "collecting" ? "Collecting" : freshness === "live" ? "Live" : freshness === "stale" ? "Stale" : "Unreachable";
+  const age = live.lastSuccessAt === null || now === null ? "no scrape yet" : formatAge(now - live.lastSuccessAt);
+
   return (
-    <header className="flex items-center justify-between gap-3 border-b border-line bg-panel px-4 py-3 lg:hidden">
-      <Wordmark />
-      <div className="flex items-center gap-2">
-        <button type="button" className="btn" onClick={onLearn}>
-          Learn
-        </button>
-        <button type="button" className="btn" onClick={() => dialogRef.current?.showModal()}>
-          Menu
-        </button>
+    <header className="app-header glass">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 lg:hidden">
+            <Wordmark />
+          </div>
+          <p className="type-body" aria-live="polite">
+            <span className="text-ink-dim">API </span>
+            <StatusWord
+              tone={live.health === "reachable" ? "allow" : live.health === "unreachable" ? "reject" : "mute"}
+              label={live.health === "unknown" ? "Checking" : live.health === "reachable" ? "Reachable" : "Unreachable"}
+            />
+            <span className="mx-2 text-line">/</span>
+            <span className="text-ink-dim">Metrics </span>
+            <StatusWord
+              tone={freshness === "live" ? "signal" : freshness === "stale" ? "amber" : freshness === "unreachable" ? "reject" : "mute"}
+              label={freshnessText}
+            />
+            <span className="type-data-sm ml-2 text-ink-dim">{age}</span>
+          </p>
+          <p className="type-secondary mt-1 text-ink-dim">Metrics are this Node process only. They are not a cluster total.</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <ThemeMenu choice={themeChoice} onChange={onTheme} />
+          <button type="button" className="btn mobile-only" onClick={onLearn}>
+            Learn
+          </button>
+          <button type="button" className="btn mobile-only" onClick={() => dialogRef.current?.showModal()}>
+            Menu
+          </button>
+        </div>
       </div>
       <dialog
         ref={dialogRef}
@@ -233,53 +266,13 @@ function MobileBar({
         <nav aria-label="Dashboard" className="flex flex-col gap-1">
           <NavLinks onNavigate={() => dialogRef.current?.close()} />
         </nav>
-        <div className="mt-4 grid gap-3">
-          <ThemeToggle variant="segmented" name="theme-drawer" choice={themeChoice} onChange={onTheme} />
+        <div className="mt-4">
           <button type="button" className="btn" onClick={onLearn}>
             Learn
           </button>
         </div>
       </dialog>
     </header>
-  );
-}
-
-function StatusStrip() {
-  const live = useLive();
-  const [now, setNow] = useState<number | null>(null);
-  const freshness = useFreshness(now ?? live.lastSuccessAt ?? 0);
-
-  useEffect(() => {
-    const tick = () => setNow(Date.now());
-    tick();
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const freshnessText =
-    freshness === "collecting" ? "Collecting" : freshness === "live" ? "Live" : freshness === "stale" ? "Stale" : "Unreachable";
-  const age = live.lastSuccessAt === null || now === null ? "no scrape yet" : formatAge(now - live.lastSuccessAt);
-
-  return (
-    <div className="sticky top-0 z-20 border-b border-line bg-panel px-4 py-3 lg:px-8">
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <p className="type-body" aria-live="polite">
-          <span className="text-ink-dim">API </span>
-          <StatusWord
-            tone={live.health === "reachable" ? "allow" : live.health === "unreachable" ? "reject" : "mute"}
-            label={live.health === "unknown" ? "Checking" : live.health === "reachable" ? "Reachable" : "Unreachable"}
-          />
-          <span className="mx-2 text-line">/</span>
-          <span className="text-ink-dim">Metrics </span>
-          <StatusWord
-            tone={freshness === "live" ? "signal" : freshness === "stale" ? "amber" : freshness === "unreachable" ? "reject" : "mute"}
-            label={freshnessText}
-          />
-          <span className="type-data-sm ml-2 text-ink-dim">{age}</span>
-        </p>
-        <p className="type-secondary max-w-xl text-ink-dim">Metrics are this Node process only. They are not a cluster total.</p>
-      </div>
-    </div>
   );
 }
 
