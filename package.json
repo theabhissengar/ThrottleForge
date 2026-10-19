@@ -20,6 +20,7 @@
     "load:core": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/core-bench.ts",
     "load:compare": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/compare-scenarios.ts",
     "load:redis-compare": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/redis-compare.ts",
-    "load:http": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/http-bench.ts"
+    "load:http": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/http-bench.ts",
+    "load:adaptive": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/adaptive-compare.ts"
   }
 }

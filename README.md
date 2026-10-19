@@ -14,6 +14,8 @@ Locally runnable API rate-limiting engine in an **npm workspaces** monorepo.
 
 **Milestone 5** adds a process-local Prometheus text endpoint at `GET /metrics` for fixed-window allows, rejections, consume latency, store failures, and fail-open admissions. Restrict that route to localhost or a trusted monitoring network unless public exposure is explicitly intended.
 
+**Milestone 6** compares a rule-based global admission budget with static floor and ceiling limits on identical in-memory traces. The pre-registered comparison passed. The controller is not on the HTTP path: this API has no capacity signal to drive it.
+
 ## Requirements
 
 - Node.js LTS
@@ -177,6 +179,7 @@ Observational generators live in [`tools/load-gen`](tools/load-gen/README.md). T
 npm run load:compare -- --scenario boundary-burst --limit 10 --windowMs 1000
 npm run load:core -- --pattern one-client --requests 200 --concurrency 20 --limit 50 --algorithm sliding
 npm run load:http -- --baseUrl http://127.0.0.1:3000 --requests 40 --concurrency 8 --pattern one-client
+npm run load:adaptive
 ```
 
 - `load:compare` generates one trace and replays it on all three algorithms (correctness vs observational metrics separated).
@@ -220,16 +223,16 @@ Start a second process with `PORT=3001` and the same Redis settings.
 - `apps/api/src/rate-limit/` — Nest module, guard, identity adapter, service facade, optional ioredis client
 - `apps/api/src/demo/`, `apps/api/src/health/`, `apps/api/src/metrics/` — sample routes and the Prometheus scrape
 - `apps/api/test/unit`, `concurrency`, `integration`
-- `tools/load-gen/` — core bench, algorithm compare, Redis fixed-window compare, HTTP load generators
+- `tools/load-gen/` — core bench, algorithm compare, Redis fixed-window compare, adaptive global-budget compare, HTTP load generators
 
 ## Roadmap
 
 2. ~~Bounded memory + local traffic generator~~  
 3. ~~Sliding-window / token-bucket comparison~~  
 4. ~~Redis shared fixed-window quotas + optional Docker Compose~~  
-5. ~~Metrics / observability (`GET /metrics`)~~ (this milestone)  
+5. ~~Metrics / observability (`GET /metrics`)~~  
 5b. Next.js `apps/web` dashboard (HTTP client to the API)  
-6. Adaptive policies only if measurements justify them vs a static baseline  
+6. ~~Adaptive global-budget experiment~~ The in-memory comparison passed. It is not mounted on HTTP or Redis, because the API has no congestion signal.  
 
 ## License
 

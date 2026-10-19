@@ -6,7 +6,7 @@ Observational tools for Nest-free core limiters and the HTTP demo route. They ar
 
 - Node.js LTS
 - Dependencies already installed from the monorepo root (`npm install`)
-- Redis only for `load:redis-compare` (`REDIS_URL`). `load:core`, `load:compare`, and `load:http` do not use it.
+- Redis only for `load:redis-compare` (`REDIS_URL`). `load:core`, `load:compare`, `load:adaptive`, and `load:http` do not use it.
 
 Run from the **repository root**.
 
@@ -103,3 +103,19 @@ npm run load:redis-compare -- --scenario sustained-over --limit 10 --windowMs 10
 ```
 
 `REDIS_URL` is required. Scenarios are `boundary-burst` and `sustained-over` only. The six `load:compare` scenarios stay in memory.
+
+## Adaptive global budget (Milestone 6)
+
+`adaptive-compare.ts` builds one deterministic trace per scenario and replays it from fresh state for five runners: adaptive, static floor (limit 1), static ceiling (limit 32), static oracle (the scenario's initial plant capacity), and a per-client fixed window at limit 8. The first four use the single key `global`. The per-client runner is labeled `per-client-fixed-window-reference` and is not a pass baseline.
+
+```bash
+npm run load:adaptive
+```
+
+The controller is `createAdaptiveState` / `applyAdaptiveUpdate`. This tool owns the plant. After each window it passes only `{ available: true, congested, saturated }`, where `congested` means admits exceeded that window's capacity. The pass set is steady, burst, sustained overload, recovery, and capacity change. Mixed clients are printed and excluded from the mean.
+
+JSON separates `correctness` from `observational`. The correctness block has per-scenario offered, admitted, shortfall, excess, regret, normalized regret, the limit in force each window, limit updates, increase/decrease/hold counts, and per-client admits. It also has the five-scenario means and the two comparisons. Exit code 0 means the adaptive mean normalized regret is strictly below both static floor and static ceiling, and those regrets match the hand calculation. Exit code 1 leaves the parameters unchanged. `observational.elapsedMs` is not a gate. Two runs must match on `correctness`.
+
+Recorded pass-set regrets (adaptive / floor / ceiling / oracle): steady 6/24/0/0, burst 10/28/24/0, sustained overload 28/56/192/0, recovery 18/36/72/0, capacity change 102/132/48/48. Means: adaptive about 0.2164, floor about 0.4563, ceiling about 0.3434, oracle 0.05. The comparison passed. On the mixed trace every adaptive admit went to `ip:heavy`.
+
+The HTTP API still has no capacity signal, so this result does not turn the controller on for Nest or Redis.

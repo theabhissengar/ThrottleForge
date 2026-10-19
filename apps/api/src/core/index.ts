@@ -1,3 +1,12 @@
+export {
+  AdaptiveConfig,
+  AdaptiveSignal,
+  AdaptiveState,
+  AdaptiveUpdate,
+  ApplyResult,
+  applyAdaptiveUpdate,
+  createAdaptiveState,
+} from './adaptive-policy';
 export { Clock, SystemClock, FakeClock } from './clock';
 export { Decision } from './decision';
 export { InvalidPolicyError } from './errors';

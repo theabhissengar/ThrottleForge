@@ -9,7 +9,7 @@ ThrottleForge is an **npm workspaces** monorepo:
 - `packages/*` — reserved for shared libraries when a second consumer appears
 - `tools/load-gen` — Core/HTTP load generators and M3 algorithm comparison (relative import into `apps/api/src/core`; not a separate workspace package yet)
 
-Root `package.json` orchestrates workspaces, proxies API scripts, and exposes `load:core` / `load:compare` / `load:http`.
+Root `package.json` orchestrates workspaces, proxies API scripts, and exposes `load:core` / `load:compare` / `load:adaptive` / `load:http`.
 
 ## Rate-limiting core location
 
@@ -63,9 +63,9 @@ Nest HTTP continues to use fixed-window only in M3 (no algorithm selection DI).
 | M2 | Memory cleanup, concurrency evidence, traffic generator |
 | M3 | Algorithm comparison (sliding window, token bucket) |
 | M4 | Redis shared fixed-window quotas; optional Docker Compose |
-| M5 | Metrics / observability — **current** |
+| M5 | Metrics / observability |
 | M5b | Next.js `apps/web` dashboard over HTTP APIs |
-| M6 | Adaptive policies vs static baseline |
+| M6 | Adaptive global-budget experiment. The pre-registered comparison passed. The controller is not mounted on HTTP or Redis |
 
 ## Explicit non-goals (early milestones)
 
@@ -94,3 +94,27 @@ Series, all low-cardinality:
 The HTTP path records `algorithm="fixed_window"` only. `store` is `memory` or `redis`. Client ids, IP addresses, request ids, URLs, and Redis error text are never labels. Idle scrapes include `HELP` and `TYPE` without samples; a missing sample means zero.
 
 Recording happens after the limiter has already returned. A throw from the recorder is dropped and cannot change an allow, reject, or unavailable outcome. The in-memory `consume` path stays synchronous and does not add network or filesystem I/O. Limiter and policy errors are not caught by that isolation. `render()` is a memory read; if it throws, the scrape fails and quota state is unchanged.
+
+## Adaptive global budget (Milestone 6)
+
+`createAdaptiveState` / `applyAdaptiveUpdate` in `apps/api/src/core/adaptive-policy.ts` are a pure controller. They do not read a clock, store, or capacity. `npm run load:adaptive` replays one ordered trace per scenario onto a fresh in-memory fixed-window counter. Global runners use the key `global`. The per-client fixed-window column at limit 8 is orientation only.
+
+Frozen parameters: `floor = 1`, `initial = 1`, `ceiling = 32`, decrease `max(floor, floor(limit / 2))`, increase `+1` only when the window was saturated and healthy, and one hold after a decrease. The plant sets `congested` only when `admitted > C`. Rejects are not congestion. `windowMs` stays 1000.
+
+Pass set: steady, burst, sustained overload, recovery, and capacity change. Mixed clients are reported and left out of the mean. Regret is `shortfall + excess`, with `shortfall = max(0, min(offered, C) - admitted)` and `excess = max(0, admitted - C)`. The score is the unweighted mean of regret divided by offered requests. The run passes when the adaptive mean is strictly below both the static floor and the static ceiling. The oracle, a static limit equal to the scenario's initial `C`, is printed and is not required to lose.
+
+Recorded regrets (adaptive / floor / ceiling / oracle):
+
+| Scenario | Adaptive | Floor | Ceiling | Oracle |
+|----------|----------|-------|---------|--------|
+| steady | 6 | 24 | 0 | 0 |
+| burst | 10 | 28 | 24 | 0 |
+| sustained overload | 28 | 56 | 192 | 0 |
+| recovery | 18 | 36 | 72 | 0 |
+| capacity change | 102 | 132 | 48 | 48 |
+
+Printed means: adaptive `0.21637605042016808`, floor `0.456281512605042`, ceiling `0.34344537815126047`, oracle `0.05`. Both comparisons passed, and the pass-set regrets and adaptive limits matched the hand calculation. Steady ceiling regret is 0. Capacity change favors the ceiling (48 versus 102). The mean still favors adaptive because the ceiling's overload and recovery excess is larger. On mixed traffic the adaptive limits stay at or below 8, so all 36 admits go to `ip:heavy` and the four light clients get 0. That global prefix is not a fairness scheduler.
+
+Wall-clock time in the tool is observational and is not part of the pass.
+
+**Stage 3 decision: do not mount this controller.** The demo route does no work, and the process has no capacity or latency SLO. M5 series do not carry a congestion bit. The plant exists only in the load tool. Wiring the controller to Nest or Redis would have no honest signal: a missing signal must freeze the limit, and the limiter's own rejects must not count as congestion. A later shared budget would also need one signal across processes. Process-local M5 counters are not that signal. No HTTP flag, Redis budget, or Prometheus gauge was added.
