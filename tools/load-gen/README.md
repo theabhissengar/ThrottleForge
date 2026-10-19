@@ -6,7 +6,7 @@ Observational tools for Nest-free core limiters and the HTTP demo route. They ar
 
 - Node.js LTS
 - Dependencies already installed from the monorepo root (`npm install`)
-- No extra npm packages
+- Redis only for `load:redis-compare` (`REDIS_URL`). `load:core`, `load:compare`, and `load:http` do not use it.
 
 Run from the **repository root**.
 
@@ -88,3 +88,16 @@ npm run load:http -- --baseUrl http://127.0.0.1:3000 --requests 40 --concurrency
 - Throughput and p50/p95/p99 are machine-dependent and noisy.
 - Core and HTTP numbers are **not** comparable.
 - Use Jest for correctness; use these tools for smoke/load observation and algorithm behavior comparison.
+
+## Redis fixed-window comparison (Milestone 4)
+
+Replays one ordered trace on `InMemoryStore` and on Redis. `allowed`, `remaining`, and `resetAt` must match. The Redis replay holds keys for at least 30 seconds so a 1ms logical remainder cannot expire between events; that floor is only in this tool. Printed latency and throughput are machine-dependent and are not a ranking. This does not compare Redis outages.
+
+```powershell
+docker compose up -d redis
+$env:REDIS_URL = "redis://127.0.0.1:6379"
+npm run load:redis-compare -- --scenario boundary-burst --limit 10 --windowMs 1000
+npm run load:redis-compare -- --scenario sustained-over --limit 10 --windowMs 1000
+```
+
+`REDIS_URL` is required. Scenarios are `boundary-burst` and `sustained-over` only. The six `load:compare` scenarios stay in memory.

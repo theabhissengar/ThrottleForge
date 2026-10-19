@@ -6,6 +6,7 @@ import { FakeClock } from '../../src/core/clock';
 import {
   RATE_LIMIT_ALLOW_TEST_CLIENT_ID,
   RATE_LIMIT_POLICY,
+  RATE_LIMIT_STORE_KIND,
 } from '../../src/rate-limit/rate-limit.config';
 import { TEST_CLIENT_ID_HEADER } from '../../src/rate-limit/nest-identity.extractor';
 import {
@@ -34,6 +35,8 @@ async function createApp(options: {
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
   })
+    .overrideProvider(RATE_LIMIT_STORE_KIND)
+    .useValue('memory')
     .overrideProvider(RATE_LIMIT_POLICY)
     .useValue({ limit: LIMIT, windowMs: WINDOW_MS })
     .overrideProvider(RATE_LIMIT_ALLOW_TEST_CLIENT_ID)

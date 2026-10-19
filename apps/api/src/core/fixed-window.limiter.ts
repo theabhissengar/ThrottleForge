@@ -1,5 +1,6 @@
 import { Clock, SystemClock } from './clock';
 import { Decision } from './decision';
+import { fixedWindowDecision } from './fixed-window.decision';
 import { ClientId } from './identity';
 import {
   FixedWindowPolicy,
@@ -34,25 +35,12 @@ export class FixedWindowLimiter implements RateLimiter {
 
     const result = this.store.tryConsume(clientId, windowStart, limit);
 
-    if (!result.allowed) {
-      const retryAfterSec = Math.max(
-        0,
-        Math.ceil((resetAt - currentNow) / 1000),
-      );
-      return {
-        allowed: false,
-        limit,
-        remaining: 0,
-        resetAt,
-        retryAfterSec,
-      };
-    }
-
-    return {
-      allowed: true,
+    return fixedWindowDecision({
+      allowed: result.allowed,
+      count: result.count,
       limit,
-      remaining: limit - result.count,
+      now: currentNow,
       resetAt,
-    };
+    });
   }
 }

@@ -14,10 +14,12 @@
     "start:dev": "npm run start:dev -w @throttleforge/api",
     "start:prod": "npm run start:prod -w @throttleforge/api",
     "test": "npm run test -w @throttleforge/api",
+    "test:redis": "npm run test:redis -w @throttleforge/api",
     "test:watch": "npm run test:watch -w @throttleforge/api",
     "test:cov": "npm run test:cov -w @throttleforge/api",
     "load:core": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/core-bench.ts",
     "load:compare": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/compare-scenarios.ts",
+    "load:redis-compare": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/redis-compare.ts",
     "load:http": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/http-bench.ts"
   }
 }

@@ -8,7 +8,10 @@ import {
 import { Request, Response } from 'express';
 import { Decision } from '../core/decision';
 import { NestIdentityExtractor } from './nest-identity.extractor';
-import { RateLimitService } from './rate-limit.service';
+import {
+  RateLimitConsumeResult,
+  RateLimitService,
+} from './rate-limit.service';
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
@@ -17,14 +20,25 @@ export class RateLimitGuard implements CanActivate {
     private readonly identityExtractor: NestIdentityExtractor,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  canActivate(context: ExecutionContext): boolean | Promise<boolean> {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
 
     const clientId = this.identityExtractor.extract(request);
-    const decision = this.rateLimitService.consume(clientId);
+    const result = this.rateLimitService.consume(clientId);
+    if (result instanceof Promise) {
+      return result.then((outcome) => this.finish(response, outcome));
+    }
+    return this.finish(response, result);
+  }
 
+  private finish(response: Response, outcome: RateLimitConsumeResult): boolean {
+    if (outcome.type === 'unavailable') {
+      return this.finishUnavailable(response);
+    }
+
+    const decision = outcome.decision;
     this.applyRateLimitHeaders(response, decision);
 
     if (!decision.allowed) {
@@ -41,6 +55,21 @@ export class RateLimitGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private finishUnavailable(response: Response): boolean {
+    if (this.rateLimitService.redisErrorMode() === 'open') {
+      response.setHeader('X-RateLimit-Mode', 'degraded');
+      return true;
+    }
+
+    throw new HttpException(
+      {
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+        message: 'Rate limit store unavailable',
+      },
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
   }
 
   private applyRateLimitHeaders(

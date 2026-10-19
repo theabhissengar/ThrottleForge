@@ -2,9 +2,28 @@ export { Clock, SystemClock, FakeClock } from './clock';
 export { Decision } from './decision';
 export { InvalidPolicyError } from './errors';
 export {
+  AsyncConsumeOutcome,
+  AsyncRateLimiter,
+  AsyncRateLimitStore,
+  RedisFailureMode,
+  TryConsumeResult,
+} from './async-store';
+export { AsyncFixedWindowLimiter } from './async-fixed-window.limiter';
+export {
+  fixedWindowDecision,
+  fixedWindowTtlMs,
+} from './fixed-window.decision';
+export {
   FixedWindowLimiter,
   calendarWindowStart,
 } from './fixed-window.limiter';
+export {
+  DEFAULT_REDIS_KEY_PREFIX,
+  FIXED_WINDOW_CONSUME_LUA,
+  RedisEvalClient,
+  RedisFixedWindowStore,
+  fixedWindowRedisKey,
+} from './fixed-window.redis-store';
 export {
   ClientId,
   clientIdFromIp,
