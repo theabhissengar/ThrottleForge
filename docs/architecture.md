@@ -5,7 +5,7 @@
 ThrottleForge is an **npm workspaces** monorepo:
 
 - `apps/api` — NestJS + TypeScript backend (current focus)
-- `apps/web` — reserved for a future Next.js dashboard (not scaffolded yet)
+- `apps/web` — Next.js dashboard. It calls the API over HTTP only and does not import `src/core` or Nest modules.
 - `packages/*` — reserved for shared libraries when a second consumer appears
 - `tools/load-gen` — Core/HTTP load generators and M3 algorithm comparison (relative import into `apps/api/src/core`; not a separate workspace package yet)
 
@@ -17,7 +17,7 @@ The Nest-free rate-limiting core lives in **`apps/api/src/core`**.
 
 It is not a separate workspace package yet. Extraction into `packages/rate-limiter` is justified only when a second in-repo consumer needs the same TypeScript package by name. `tools/load-gen` currently imports the core via a relative path to avoid that package split.
 
-The future Next.js app must **not** import `src/core` or Nest modules. It will call the API over HTTP/JSON only.
+`apps/web` must **not** import `src/core` or Nest modules. It calls the API over HTTP/JSON only.
 
 ## Algorithms (Milestone 3)
 
@@ -64,12 +64,12 @@ Nest HTTP continues to use fixed-window only in M3 (no algorithm selection DI).
 | M3 | Algorithm comparison (sliding window, token bucket) |
 | M4 | Redis shared fixed-window quotas; optional Docker Compose |
 | M5 | Metrics / observability |
-| M5b | Next.js `apps/web` dashboard over HTTP APIs |
+| M5b / M7 | Next.js `apps/web` dashboard over HTTP. Read-only. No database. Adaptive control stays off the HTTP path |
 | M6 | Adaptive global-budget experiment. The pre-registered comparison passed. The controller is not mounted on HTTP or Redis |
 
 ## Explicit non-goals (early milestones)
 
-No PostgreSQL, Kubernetes, Turborepo, or Nx. Redis and Docker Compose are optional in M4 and are not required for M1–M3 or for `npm test`. No frontend scaffold until metrics justify a dashboard (M5b). Load tools remain observational and must not replace Jest correctness tests. No Nest algorithm switch and no sliding-window log. Redis is fixed-window only.
+No PostgreSQL, Kubernetes, Turborepo, or Nx. Redis and Docker Compose are optional in M4 and are not required for M1–M3 or for `npm test`. No frontend scaffold until metrics justify a dashboard (M5b, delivered in M7 as read-only `apps/web`). Load tools remain observational and must not replace Jest correctness tests. No Nest algorithm switch and no sliding-window log. Redis is fixed-window only.
 
 ## Redis fixed window (Milestone 4)
 

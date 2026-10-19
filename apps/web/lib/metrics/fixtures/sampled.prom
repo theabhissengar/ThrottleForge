@@ -1,0 +1,44 @@
+# HELP throttleforge_rate_limit_requests_total Completed limiter decisions.
+# TYPE throttleforge_rate_limit_requests_total counter
+throttleforge_rate_limit_requests_total{algorithm="fixed_window",result="allowed",store="redis"} 5
+throttleforge_rate_limit_requests_total{algorithm="fixed_window",result="rejected",store="redis"} 1
+# HELP throttleforge_rate_limit_store_failures_total Store operations that failed before a quota decision.
+# TYPE throttleforge_rate_limit_store_failures_total counter
+# HELP throttleforge_rate_limit_degraded_requests_total Fail-open admissions after a store failure.
+# TYPE throttleforge_rate_limit_degraded_requests_total counter
+# HELP throttleforge_rate_limit_operation_duration_seconds Seconds spent inside one limiter consume.
+# TYPE throttleforge_rate_limit_operation_duration_seconds histogram
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.00005",result="allowed",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.0001",result="allowed",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.00025",result="allowed",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.0005",result="allowed",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.001",result="allowed",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.0025",result="allowed",store="redis"} 3
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.005",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.01",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.025",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.05",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.1",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.25",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.5",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="1",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="+Inf",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_sum{algorithm="fixed_window",result="allowed",store="redis"} 0.0106669
+throttleforge_rate_limit_operation_duration_seconds_count{algorithm="fixed_window",result="allowed",store="redis"} 5
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.00005",result="rejected",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.0001",result="rejected",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.00025",result="rejected",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.0005",result="rejected",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.001",result="rejected",store="redis"} 0
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.0025",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.005",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.01",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.025",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.05",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.1",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.25",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="0.5",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="1",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_bucket{algorithm="fixed_window",le="+Inf",result="rejected",store="redis"} 1
+throttleforge_rate_limit_operation_duration_seconds_sum{algorithm="fixed_window",result="rejected",store="redis"} 0.0013085
+throttleforge_rate_limit_operation_duration_seconds_count{algorithm="fixed_window",result="rejected",store="redis"} 1

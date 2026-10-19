@@ -17,10 +17,18 @@
     "test:redis": "npm run test:redis -w @throttleforge/api",
     "test:watch": "npm run test:watch -w @throttleforge/api",
     "test:cov": "npm run test:cov -w @throttleforge/api",
+    "dev:web": "npm run dev -w @throttleforge/web",
+    "build:web": "npm run build -w @throttleforge/web",
+    "start:web": "npm run start -w @throttleforge/web",
+    "test:web": "npm run test -w @throttleforge/web",
+    "dev:stack": "concurrently -n api,web -c cyan,magenta \"npm run start:dev\" \"npm run dev:web\"",
     "load:core": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/core-bench.ts",
     "load:compare": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/compare-scenarios.ts",
     "load:redis-compare": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/redis-compare.ts",
     "load:http": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/http-bench.ts",
     "load:adaptive": "npx ts-node --transpile-only --project tools/tsconfig.json tools/load-gen/adaptive-compare.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
   }
 }

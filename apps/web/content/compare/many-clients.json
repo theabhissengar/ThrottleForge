@@ -1,0 +1,74 @@
+{
+  "mode": "compare",
+  "scenario": "many-clients",
+  "limit": 10,
+  "windowMs": 1000,
+  "traceLength": 30,
+  "policyMapping": {
+    "fixed": "{ limit, windowMs }",
+    "sliding": "{ limit, windowMs } (weighted estimate)",
+    "token-bucket": "capacity=limit, refillPerMs=limit/windowMs"
+  },
+  "results": [
+    {
+      "algorithm": "fixed",
+      "correctness": {
+        "allowed": 30,
+        "rejected": 0,
+        "unexpectedErrors": 0,
+        "storeSizeAfter": 30
+      },
+      "observational": {
+        "elapsedMs": 0.536,
+        "throughputRps": 56001.49,
+        "latency": {
+          "p50Ms": 0.0056,
+          "p95Ms": 0.0379,
+          "p99Ms": 0.229
+        }
+      }
+    },
+    {
+      "algorithm": "sliding",
+      "correctness": {
+        "allowed": 30,
+        "rejected": 0,
+        "unexpectedErrors": 0,
+        "storeSizeAfter": 30
+      },
+      "observational": {
+        "elapsedMs": 0.599,
+        "throughputRps": 50066.76,
+        "latency": {
+          "p50Ms": 0.0078,
+          "p95Ms": 0.0346,
+          "p99Ms": 0.2935
+        }
+      }
+    },
+    {
+      "algorithm": "token-bucket",
+      "correctness": {
+        "allowed": 30,
+        "rejected": 0,
+        "unexpectedErrors": 0,
+        "storeSizeAfter": 30
+      },
+      "observational": {
+        "elapsedMs": 0.462,
+        "throughputRps": 64949.12,
+        "latency": {
+          "p50Ms": 0.0051,
+          "p95Ms": 0.0323,
+          "p99Ms": 0.219
+        }
+      }
+    }
+  ],
+  "notes": [
+    "Same ordered client identities and timestamps replayed per algorithm on fresh state",
+    "Do not expect equal allow counts across algorithms",
+    "observational latency/throughput are machine-dependent; not a CI gate",
+    "Not a universal performance ranking"
+  ]
+}

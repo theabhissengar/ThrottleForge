@@ -4,7 +4,7 @@ Locally runnable API rate-limiting engine in an **npm workspaces** monorepo.
 
 **Milestone 1** implements a calendar-aligned **fixed-window** limiter with in-memory state behind a NestJS HTTP shell. The algorithm core has **no NestJS imports** and lives in `apps/api/src/core`.
 
-**Milestone 1b** placed the Nest app under `apps/api` and configured root workspaces. A Next.js `apps/web` app is planned for a later milestone (after metrics exist) and is **not** scaffolded yet.
+**Milestone 1b** placed the Nest app under `apps/api` and configured root workspaces.
 
 **Milestone 2** adds inspection-budgeted stale-record cleanup on the in-memory store and local core/HTTP load generators under `tools/load-gen`.
 
@@ -15,6 +15,8 @@ Locally runnable API rate-limiting engine in an **npm workspaces** monorepo.
 **Milestone 5** adds a process-local Prometheus text endpoint at `GET /metrics` for fixed-window allows, rejections, consume latency, store failures, and fail-open admissions. Restrict that route to localhost or a trusted monitoring network unless public exposure is explicitly intended.
 
 **Milestone 6** compares a rule-based global admission budget with static floor and ceiling limits on identical in-memory traces. The pre-registered comparison passed. The controller is not on the HTTP path: this API has no capacity signal to drive it.
+
+**Milestone 7** adds a read-only Next.js dashboard at `apps/web`. It scrapes this API over HTTP and displays committed load-tool transcripts. It does not change rate limits or mount the adaptive controller.
 
 ## Requirements
 
@@ -29,6 +31,7 @@ No PostgreSQL or cloud services. Milestone 4 can use a local Redis (Docker Compo
 throttleforge/
   apps/
     api/          # NestJS backend (@throttleforge/api)
+    web/          # Next.js dashboard (@throttleforge/web)
   docs/           # Architecture notes
   tools/
     load-gen/     # Core + HTTP load generators (observational)
@@ -47,6 +50,14 @@ npm run start:dev
 ```
 
 Root scripts proxy to `@throttleforge/api`. Default listen address: `http://localhost:3000`
+
+The dashboard is a second process on port **3001**. It does not replace `npm run start:dev`.
+
+```bash
+npm run dev:web
+```
+
+Open `http://127.0.0.1:3001`. Optional: `npm run dev:stack` runs the API watch process and the dashboard together. `THROTTLEFORGE_API_ORIGIN` in `apps/web/.env` defaults to `http://127.0.0.1:3000` when unset. See `apps/web/.env.example`. The dashboard only calls `GET /health` and `GET /metrics` through its own server. It does not call `GET /api/demo`. Redis is not required when the API uses the default memory store.
 
 | Route | Rate limited? |
 |-------|----------------|
@@ -215,7 +226,7 @@ Start a second process with `PORT=3001` and the same Redis settings.
 - **Redis is fixed-window only.** One Lua `EVAL` checks, increments only on allow, resets a stale window, and sets a relative TTL. Instances need synchronized clocks. Active keys in the current window are still unbounded; expiry removes idle windows.
 - Counters are **transient**; there is no relational database by design.
 - **`GET /metrics` is unauthenticated**, same as `/health`, and it is not behind the rate-limit guard. Restrict it to localhost or a trusted monitoring network unless public exposure is explicitly intended.
-- **No frontend yet.** `apps/web` will communicate with the API over HTTP only (Milestone 5b).
+- **The dashboard is read-only and process-local.** `apps/web` talks to the API over HTTP only. It does not import `apps/api/src/core`. Live charts are scrape deltas collected in the browser. Committed comparison and adaptive figures are tool transcripts, not a production SLO.
 
 ## API package layout
 
@@ -231,7 +242,7 @@ Start a second process with `PORT=3001` and the same Redis settings.
 3. ~~Sliding-window / token-bucket comparison~~  
 4. ~~Redis shared fixed-window quotas + optional Docker Compose~~  
 5. ~~Metrics / observability (`GET /metrics`)~~  
-5b. Next.js `apps/web` dashboard (HTTP client to the API)  
+5b. ~~Next.js `apps/web` dashboard (HTTP client to the API)~~ Read-only local dashboard. Live view is process-local Prometheus. Algorithm and adaptive pages use committed transcripts plus optional JSON import. No database and no live adaptive control.  
 6. ~~Adaptive global-budget experiment~~ The in-memory comparison passed. It is not mounted on HTTP or Redis, because the API has no congestion signal.  
 
 ## License

@@ -1,0 +1,1707 @@
+{
+  "mode": "adaptive-compare",
+  "parameters": {
+    "floor": 1,
+    "initial": 1,
+    "ceiling": 32,
+    "windowMs": 1000,
+    "base": 1700000000000,
+    "perClientReferenceLimit": 8,
+    "globalKey": "global"
+  },
+  "correctness": {
+    "scenarios": [
+      {
+        "scenario": "steady",
+        "inPassSet": true,
+        "initialCapacity": 8,
+        "traceLength": 32,
+        "runners": [
+          {
+            "runner": "adaptive",
+            "usesController": true,
+            "offered": 32,
+            "admitted": 26,
+            "rejected": 6,
+            "shortfall": 6,
+            "excess": 0,
+            "regret": 6,
+            "normalizedRegret": 0.1875,
+            "limitsInForce": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              5,
+              5,
+              5
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              1,
+              2,
+              3,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "limitAfterUpdate": [
+              2,
+              3,
+              4,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "outcomes": {
+              "increase": 4,
+              "decrease": 0,
+              "hold": 4
+            },
+            "perClientAdmitted": {
+              "ip:shared": 26
+            }
+          },
+          {
+            "runner": "static-floor",
+            "usesController": false,
+            "offered": 32,
+            "admitted": 8,
+            "rejected": 24,
+            "shortfall": 24,
+            "excess": 0,
+            "regret": 24,
+            "normalizedRegret": 0.75,
+            "limitsInForce": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 8
+            }
+          },
+          {
+            "runner": "static-ceiling",
+            "usesController": false,
+            "offered": 32,
+            "admitted": 32,
+            "rejected": 0,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 32
+            }
+          },
+          {
+            "runner": "static-oracle",
+            "usesController": false,
+            "offered": 32,
+            "admitted": 32,
+            "rejected": 0,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 32
+            }
+          },
+          {
+            "runner": "per-client-fixed-window-reference",
+            "usesController": false,
+            "offered": 32,
+            "admitted": 32,
+            "rejected": 0,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 32
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "burst",
+        "inPassSet": true,
+        "initialCapacity": 8,
+        "traceLength": 68,
+        "runners": [
+          {
+            "runner": "adaptive",
+            "usesController": true,
+            "offered": 68,
+            "admitted": 26,
+            "rejected": 42,
+            "shortfall": 10,
+            "excess": 0,
+            "regret": 10,
+            "normalizedRegret": 0.14705882352941177,
+            "limitsInForce": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              5,
+              5,
+              5
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              40,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              1,
+              2,
+              3,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "limitAfterUpdate": [
+              2,
+              3,
+              4,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "outcomes": {
+              "increase": 4,
+              "decrease": 0,
+              "hold": 4
+            },
+            "perClientAdmitted": {
+              "ip:shared": 26
+            }
+          },
+          {
+            "runner": "static-floor",
+            "usesController": false,
+            "offered": 68,
+            "admitted": 8,
+            "rejected": 60,
+            "shortfall": 28,
+            "excess": 0,
+            "regret": 28,
+            "normalizedRegret": 0.4117647058823529,
+            "limitsInForce": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              40,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 8
+            }
+          },
+          {
+            "runner": "static-ceiling",
+            "usesController": false,
+            "offered": 68,
+            "admitted": 60,
+            "rejected": 8,
+            "shortfall": 0,
+            "excess": 24,
+            "regret": 24,
+            "normalizedRegret": 0.35294117647058826,
+            "limitsInForce": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              40,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              4,
+              4,
+              4,
+              32,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 60
+            }
+          },
+          {
+            "runner": "static-oracle",
+            "usesController": false,
+            "offered": 68,
+            "admitted": 36,
+            "rejected": 32,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              40,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              4,
+              4,
+              4,
+              8,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 36
+            }
+          },
+          {
+            "runner": "per-client-fixed-window-reference",
+            "usesController": false,
+            "offered": 68,
+            "admitted": 36,
+            "rejected": 32,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              4,
+              4,
+              4,
+              40,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              4,
+              4,
+              4,
+              8,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 36
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "sustained-overload",
+        "inPassSet": true,
+        "initialCapacity": 8,
+        "traceLength": 320,
+        "runners": [
+          {
+            "runner": "adaptive",
+            "usesController": true,
+            "offered": 320,
+            "admitted": 36,
+            "rejected": 284,
+            "shortfall": 28,
+            "excess": 0,
+            "regret": 28,
+            "normalizedRegret": 0.0875,
+            "limitsInForce": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40
+            ],
+            "admittedByWindow": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "limitAfterUpdate": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "outcomes": {
+              "increase": 8,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 36
+            }
+          },
+          {
+            "runner": "static-floor",
+            "usesController": false,
+            "offered": 320,
+            "admitted": 8,
+            "rejected": 312,
+            "shortfall": 56,
+            "excess": 0,
+            "regret": 56,
+            "normalizedRegret": 0.175,
+            "limitsInForce": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40
+            ],
+            "admittedByWindow": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 8
+            }
+          },
+          {
+            "runner": "static-ceiling",
+            "usesController": false,
+            "offered": 320,
+            "admitted": 256,
+            "rejected": 64,
+            "shortfall": 0,
+            "excess": 192,
+            "regret": 192,
+            "normalizedRegret": 0.6,
+            "limitsInForce": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40
+            ],
+            "admittedByWindow": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 256
+            }
+          },
+          {
+            "runner": "static-oracle",
+            "usesController": false,
+            "offered": 320,
+            "admitted": 64,
+            "rejected": 256,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40
+            ],
+            "admittedByWindow": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 64
+            }
+          },
+          {
+            "runner": "per-client-fixed-window-reference",
+            "usesController": false,
+            "offered": 320,
+            "admitted": 64,
+            "rejected": 256,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40,
+              40
+            ],
+            "admittedByWindow": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 64
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "recovery",
+        "inPassSet": true,
+        "initialCapacity": 8,
+        "traceLength": 140,
+        "runners": [
+          {
+            "runner": "adaptive",
+            "usesController": true,
+            "offered": 140,
+            "admitted": 26,
+            "rejected": 114,
+            "shortfall": 18,
+            "excess": 0,
+            "regret": 18,
+            "normalizedRegret": 0.12857142857142856,
+            "limitsInForce": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              5,
+              5,
+              5
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              1,
+              2,
+              3,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "limitAfterUpdate": [
+              2,
+              3,
+              4,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "outcomes": {
+              "increase": 4,
+              "decrease": 0,
+              "hold": 4
+            },
+            "perClientAdmitted": {
+              "ip:shared": 26
+            }
+          },
+          {
+            "runner": "static-floor",
+            "usesController": false,
+            "offered": 140,
+            "admitted": 8,
+            "rejected": 132,
+            "shortfall": 36,
+            "excess": 0,
+            "regret": 36,
+            "normalizedRegret": 0.2571428571428571,
+            "limitsInForce": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 8
+            }
+          },
+          {
+            "runner": "static-ceiling",
+            "usesController": false,
+            "offered": 140,
+            "admitted": 116,
+            "rejected": 24,
+            "shortfall": 0,
+            "excess": 72,
+            "regret": 72,
+            "normalizedRegret": 0.5142857142857142,
+            "limitsInForce": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              32,
+              32,
+              32,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 116
+            }
+          },
+          {
+            "runner": "static-oracle",
+            "usesController": false,
+            "offered": 140,
+            "admitted": 44,
+            "rejected": 96,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              8,
+              8,
+              8,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 44
+            }
+          },
+          {
+            "runner": "per-client-fixed-window-reference",
+            "usesController": false,
+            "offered": 140,
+            "admitted": 44,
+            "rejected": 96,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              40,
+              40,
+              40,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "admittedByWindow": [
+              8,
+              8,
+              8,
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 44
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "capacity-change",
+        "inPassSet": true,
+        "initialCapacity": 16,
+        "traceLength": 192,
+        "runners": [
+          {
+            "runner": "adaptive",
+            "usesController": true,
+            "offered": 192,
+            "admitted": 44,
+            "rejected": 148,
+            "shortfall": 101,
+            "excess": 1,
+            "regret": 102,
+            "normalizedRegret": 0.53125,
+            "limitsInForce": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              2,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "offeredByWindow": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "admittedByWindow": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              2,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "limitAfterUpdate": [
+              2,
+              3,
+              4,
+              5,
+              2,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "outcomes": {
+              "increase": 10,
+              "decrease": 1,
+              "hold": 1
+            },
+            "perClientAdmitted": {
+              "ip:shared": 44
+            }
+          },
+          {
+            "runner": "static-floor",
+            "usesController": false,
+            "offered": 192,
+            "admitted": 12,
+            "rejected": 180,
+            "shortfall": 132,
+            "excess": 0,
+            "regret": 132,
+            "normalizedRegret": 0.6875,
+            "limitsInForce": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "offeredByWindow": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "admittedByWindow": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 12
+            }
+          },
+          {
+            "runner": "static-ceiling",
+            "usesController": false,
+            "offered": 192,
+            "admitted": 192,
+            "rejected": 0,
+            "shortfall": 0,
+            "excess": 48,
+            "regret": 48,
+            "normalizedRegret": 0.25,
+            "limitsInForce": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "offeredByWindow": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "admittedByWindow": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 192
+            }
+          },
+          {
+            "runner": "static-oracle",
+            "usesController": false,
+            "offered": 192,
+            "admitted": 192,
+            "rejected": 0,
+            "shortfall": 0,
+            "excess": 48,
+            "regret": 48,
+            "normalizedRegret": 0.25,
+            "limitsInForce": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "offeredByWindow": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "admittedByWindow": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 192
+            }
+          },
+          {
+            "runner": "per-client-fixed-window-reference",
+            "usesController": false,
+            "offered": 192,
+            "admitted": 96,
+            "rejected": 96,
+            "shortfall": 64,
+            "excess": 16,
+            "regret": 80,
+            "normalizedRegret": 0.4166666666666667,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16,
+              16
+            ],
+            "admittedByWindow": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:shared": 96
+            }
+          }
+        ]
+      },
+      {
+        "scenario": "mixed",
+        "inPassSet": false,
+        "initialCapacity": 8,
+        "traceLength": 272,
+        "runners": [
+          {
+            "runner": "adaptive",
+            "usesController": true,
+            "offered": 272,
+            "admitted": 36,
+            "rejected": 236,
+            "shortfall": 28,
+            "excess": 0,
+            "regret": 28,
+            "normalizedRegret": 0.10294117647058823,
+            "limitsInForce": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "offeredByWindow": [
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34
+            ],
+            "admittedByWindow": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ],
+            "limitAfterUpdate": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "outcomes": {
+              "increase": 8,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:heavy": 36,
+              "ip:light-0": 0,
+              "ip:light-1": 0,
+              "ip:light-2": 0,
+              "ip:light-3": 0
+            }
+          },
+          {
+            "runner": "static-floor",
+            "usesController": false,
+            "offered": 272,
+            "admitted": 8,
+            "rejected": 264,
+            "shortfall": 56,
+            "excess": 0,
+            "regret": 56,
+            "normalizedRegret": 0.20588235294117646,
+            "limitsInForce": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "offeredByWindow": [
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34
+            ],
+            "admittedByWindow": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:heavy": 8,
+              "ip:light-0": 0,
+              "ip:light-1": 0,
+              "ip:light-2": 0,
+              "ip:light-3": 0
+            }
+          },
+          {
+            "runner": "static-ceiling",
+            "usesController": false,
+            "offered": 272,
+            "admitted": 256,
+            "rejected": 16,
+            "shortfall": 0,
+            "excess": 192,
+            "regret": 192,
+            "normalizedRegret": 0.7058823529411765,
+            "limitsInForce": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "offeredByWindow": [
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34
+            ],
+            "admittedByWindow": [
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32,
+              32
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:heavy": 240,
+              "ip:light-0": 8,
+              "ip:light-1": 8,
+              "ip:light-2": 0,
+              "ip:light-3": 0
+            }
+          },
+          {
+            "runner": "static-oracle",
+            "usesController": false,
+            "offered": 272,
+            "admitted": 64,
+            "rejected": 208,
+            "shortfall": 0,
+            "excess": 0,
+            "regret": 0,
+            "normalizedRegret": 0,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34
+            ],
+            "admittedByWindow": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:heavy": 64,
+              "ip:light-0": 0,
+              "ip:light-1": 0,
+              "ip:light-2": 0,
+              "ip:light-3": 0
+            }
+          },
+          {
+            "runner": "per-client-fixed-window-reference",
+            "usesController": false,
+            "offered": 272,
+            "admitted": 96,
+            "rejected": 176,
+            "shortfall": 0,
+            "excess": 32,
+            "regret": 32,
+            "normalizedRegret": 0.11764705882352941,
+            "limitsInForce": [
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8,
+              8
+            ],
+            "offeredByWindow": [
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34,
+              34
+            ],
+            "admittedByWindow": [
+              12,
+              12,
+              12,
+              12,
+              12,
+              12,
+              12,
+              12
+            ],
+            "outcomes": {
+              "increase": 0,
+              "decrease": 0,
+              "hold": 0
+            },
+            "perClientAdmitted": {
+              "ip:heavy": 64,
+              "ip:light-0": 8,
+              "ip:light-1": 8,
+              "ip:light-2": 8,
+              "ip:light-3": 8
+            }
+          }
+        ]
+      }
+    ],
+    "means": {
+      "adaptive": 0.21637605042016808,
+      "static-floor": 0.456281512605042,
+      "static-ceiling": 0.34344537815126047,
+      "static-oracle": 0.05
+    },
+    "comparisons": {
+      "adaptiveBeatsStaticFloor": true,
+      "adaptiveBeatsStaticCeiling": true,
+      "passed": true
+    },
+    "handCalculation": {
+      "matched": true,
+      "mismatches": []
+    },
+    "conclusion": "passed"
+  },
+  "observational": {
+    "elapsedMs": 10.574
+  },
+  "notes": [
+    "Same ordered trace per scenario, fresh state per runner",
+    "A window closes when the next event has a larger calendar start, or when the trace ends",
+    "Global runners consume key \"global\". per-client-fixed-window-reference is orientation only and is not a pass baseline",
+    "Pass set is steady, burst, sustained-overload, recovery, and capacity-change. Mixed is reported and excluded from the mean",
+    "Pass iff adaptive mean normalized regret is strictly below static-floor and static-ceiling. The oracle is a reference",
+    "Congestion is admitted > plant capacity. Rejects are not congestion",
+    "conclusion is a negative experiment only when handCalculation.matched is true and a comparison then fails",
+    "observational elapsedMs is machine-dependent and is not a pass gate"
+  ]
+}

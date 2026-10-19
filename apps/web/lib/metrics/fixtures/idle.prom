@@ -1,0 +1,8 @@
+# HELP throttleforge_rate_limit_requests_total Completed limiter decisions.
+# TYPE throttleforge_rate_limit_requests_total counter
+# HELP throttleforge_rate_limit_store_failures_total Store operations that failed before a quota decision.
+# TYPE throttleforge_rate_limit_store_failures_total counter
+# HELP throttleforge_rate_limit_degraded_requests_total Fail-open admissions after a store failure.
+# TYPE throttleforge_rate_limit_degraded_requests_total counter
+# HELP throttleforge_rate_limit_operation_duration_seconds Seconds spent inside one limiter consume.
+# TYPE throttleforge_rate_limit_operation_duration_seconds histogram

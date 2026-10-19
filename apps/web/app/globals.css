@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #0b1220;
+  --color-panel: #121a2b;
+  --color-raised: #182236;
+  --color-line: #2c3a52;
+  --color-ink: #e8eef7;
+  --color-ink-dim: #c5d0e0;
+  --color-signal: #3ec6d8;
+  --color-amber: #e6a23c;
+  --color-allow: #3ddc97;
+  --color-reject: #f07178;
+  --color-mute: #a9b6c9;
+  --color-oracle: #c4b5e0;
+  --color-slate: #8ea0be;
+  --font-sans: var(--font-plex-sans), "IBM Plex Sans", ui-sans-serif, sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-canvas);
+  background-image:
+    linear-gradient(to right, rgba(62, 198, 216, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(62, 198, 216, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+dialog {
+  margin: auto;
+  width: min(100% - 2rem, 22rem);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  background: var(--color-panel);
+  color: var(--color-ink);
+  padding: 1.25rem;
+}
+
+dialog::backdrop {
+  background: rgba(11, 18, 32, 0.72);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
