@@ -6,6 +6,9 @@
  * fixed-window reference. The plant capacity stays in this file. The controller
  * receives only a boolean congestion signal.
  *
+ * A nonzero exit is a negative experiment only after the hand assertions pass.
+ * Trace defects and hand mismatches are verification defects.
+ *
  * Example:
  *   npm run load:adaptive
  */
@@ -38,6 +41,8 @@ type ScenarioId =
   | 'capacity-change'
   | 'mixed';
 
+type PassScenario = Exclude<ScenarioId, 'mixed'>;
+
 type RunnerId =
   | 'adaptive'
   | 'static-floor'
@@ -47,12 +52,20 @@ type RunnerId =
 
 type OutcomeName = 'increase' | 'decrease' | 'hold';
 
+type Conclusion = 'verification-defect' | 'negative-experiment' | 'passed';
+
 interface TraceEvent {
   clientId: string;
   atMs: number;
 }
 
-const PASS_SET: readonly ScenarioId[] = [
+interface ClosedWindow {
+  index: number;
+  windowStart: number;
+  events: TraceEvent[];
+}
+
+const PASS_SET: readonly PassScenario[] = [
   'steady',
   'burst',
   'sustained-overload',
@@ -62,9 +75,18 @@ const PASS_SET: readonly ScenarioId[] = [
 
 const SCENARIOS: readonly ScenarioId[] = [...PASS_SET, 'mixed'];
 
+const HAND_OFFERED: Record<ScenarioId, number> = {
+  steady: 32,
+  burst: 68,
+  'sustained-overload': 320,
+  recovery: 140,
+  'capacity-change': 192,
+  mixed: 272,
+};
+
 const HAND_REGRET: Record<
   'adaptive' | 'static-floor' | 'static-ceiling' | 'static-oracle',
-  Record<(typeof PASS_SET)[number], number>
+  Record<PassScenario, number>
 > = {
   adaptive: {
     steady: 6,
@@ -96,14 +118,21 @@ const HAND_REGRET: Record<
   },
 };
 
-const HAND_ADAPTIVE_LIMITS: Record<(typeof PASS_SET)[number], readonly number[]> =
-  {
-    steady: [1, 2, 3, 4, 5, 5, 5, 5],
-    burst: [1, 2, 3, 4, 5, 5, 5, 5],
-    'sustained-overload': [1, 2, 3, 4, 5, 6, 7, 8],
-    recovery: [1, 2, 3, 4, 5, 5, 5, 5],
-    'capacity-change': [1, 2, 3, 4, 5, 2, 2, 3, 4, 5, 6, 7],
-  };
+const HAND_ADAPTIVE_LIMITS: Record<PassScenario, readonly number[]> = {
+  steady: [1, 2, 3, 4, 5, 5, 5, 5],
+  burst: [1, 2, 3, 4, 5, 5, 5, 5],
+  'sustained-overload': [1, 2, 3, 4, 5, 6, 7, 8],
+  recovery: [1, 2, 3, 4, 5, 5, 5, 5],
+  'capacity-change': [1, 2, 3, 4, 5, 2, 2, 3, 4, 5, 6, 7],
+};
+
+const HAND_ADAPTIVE_ADMITTED: Record<PassScenario, readonly number[]> = {
+  steady: [1, 2, 3, 4, 4, 4, 4, 4],
+  burst: [1, 2, 3, 4, 4, 4, 4, 4],
+  'sustained-overload': [1, 2, 3, 4, 5, 6, 7, 8],
+  recovery: [1, 2, 3, 4, 4, 4, 4, 4],
+  'capacity-change': [1, 2, 3, 4, 5, 2, 2, 3, 4, 5, 6, 7],
+};
 
 function windowCount(scenario: ScenarioId): number {
   return scenario === 'capacity-change' ? 12 : 8;
@@ -124,7 +153,7 @@ function offeredInWindow(scenario: ScenarioId, index: number): number {
     case 'mixed':
       return 34;
     default:
-      throw new Error(`Unhandled scenario ${scenario as string}`);
+      throw new Error(`verification defect: unhandled scenario ${scenario as string}`);
   }
 }
 
@@ -170,28 +199,80 @@ function buildTrace(scenario: ScenarioId): TraceEvent[] {
   return events;
 }
 
-function windowIndexOf(atMs: number): number {
-  return (calendarWindowStart(atMs, WINDOW_MS) - BASE) / WINDOW_MS;
+function defect(message: string): never {
+  throw new Error(`verification defect: ${message}`);
 }
 
-function groupWindows(trace: TraceEvent[]): TraceEvent[][] {
-  const groups: TraceEvent[][] = [];
-  for (const event of trace) {
-    const index = windowIndexOf(event.atMs);
+function closeWindows(trace: TraceEvent[]): ClosedWindow[] {
+  if (BASE % WINDOW_MS !== 0) {
+    defect('BASE is not divisible by windowMs');
+  }
+  if (trace.length === 0) {
+    defect('trace is empty');
+  }
+
+  const windows: ClosedWindow[] = [];
+  let current: TraceEvent[] = [];
+  let currentStart = calendarWindowStart(trace[0].atMs, WINDOW_MS);
+
+  const push = (): void => {
+    const index = (currentStart - BASE) / WINDOW_MS;
     if (!Number.isInteger(index) || index < 0) {
-      throw new Error(`event at ${event.atMs} is outside the trace horizon`);
+      defect(`calendar window ${currentStart} is outside the trace horizon`);
     }
-    if (groups[index] === undefined) {
-      groups[index] = [];
+    if (index !== windows.length) {
+      defect(`trace is missing window ${windows.length}`);
     }
-    groups[index].push(event);
+    for (const event of current) {
+      if (calendarWindowStart(event.atMs, WINDOW_MS) !== currentStart) {
+        defect(`event at ${event.atMs} is outside calendar window ${currentStart}`);
+      }
+    }
+    windows.push({ index, windowStart: currentStart, events: current });
+  };
+
+  for (const event of trace) {
+    const start = calendarWindowStart(event.atMs, WINDOW_MS);
+    if (start < currentStart) {
+      defect('trace is not ordered by calendar window');
+    }
+    if (start > currentStart) {
+      if (current.length === 0) {
+        defect(`trace is missing window ${(currentStart - BASE) / WINDOW_MS}`);
+      }
+      push();
+      current = [];
+      currentStart = start;
+    }
+    current.push(event);
   }
-  for (let index = 0; index < groups.length; index += 1) {
-    if (groups[index] === undefined) {
-      throw new Error(`trace is missing window ${index}`);
+  if (current.length === 0) {
+    defect('trace ended without a window');
+  }
+  push();
+  return windows;
+}
+
+function assertClosedShape(scenario: ScenarioId, windows: ClosedWindow[]): void {
+  if (windows.length !== windowCount(scenario)) {
+    defect(
+      `${scenario} closed ${windows.length} windows, expected ${windowCount(scenario)}`,
+    );
+  }
+  for (const window of windows) {
+    const expectedStart = BASE + window.index * WINDOW_MS;
+    if (window.windowStart !== expectedStart) {
+      defect(
+        `${scenario} window ${window.index} starts at ${window.windowStart}, expected ${expectedStart}`,
+      );
+    }
+    const expectedOffered = offeredInWindow(scenario, window.index);
+    if (window.events.length !== expectedOffered) {
+      defect(
+        `${scenario} window ${window.index} offered ${window.events.length}, expected ${expectedOffered}`,
+      );
     }
   }
-  return groups;
 }
 
 function clientCounts(trace: TraceEvent[]): Record<string, number> {
@@ -216,6 +297,7 @@ function addScore(
 
 interface RunnerReport {
   runner: RunnerId;
+  usesController: boolean;
   offered: number;
   admitted: number;
   rejected: number;
@@ -224,15 +306,20 @@ interface RunnerReport {
   regret: number;
   normalizedRegret: number;
   limitsInForce: number[];
+  offeredByWindow: number[];
+  admittedByWindow: number[];
   limitAfterUpdate?: number[];
-  outcomes?: Record<OutcomeName, number>;
+  outcomes: Record<OutcomeName, number>;
   perClientAdmitted: Record<string, number>;
+}
+
+function zeroOutcomes(): Record<OutcomeName, number> {
+  return { increase: 0, decrease: 0, hold: 0 };
 }
 
 function classifyOutcome(
   before: AdaptiveState,
   signal: { congested: boolean; saturated: boolean },
-  after: AdaptiveState,
 ): OutcomeName {
   if (signal.congested) {
     return 'decrease';
@@ -240,37 +327,74 @@ function classifyOutcome(
   if (before.hold || !signal.saturated) {
     return 'hold';
   }
-  if (after.limit > before.limit) {
-    return 'increase';
+  return 'increase';
+}
+
+function finishReport(
+  runner: RunnerId,
+  usesController: boolean,
+  offered: number,
+  admitted: number,
+  totals: { shortfall: number; excess: number },
+  limitsInForce: number[],
+  offeredByWindow: number[],
+  admittedByWindow: number[],
+  outcomes: Record<OutcomeName, number>,
+  perClientAdmitted: Record<string, number>,
+  limitAfterUpdate?: number[],
+): RunnerReport {
+  const regret = totals.shortfall + totals.excess;
+  const clientSum = Object.values(perClientAdmitted).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+  if (clientSum !== admitted) {
+    defect(`${runner} per-client admits ${clientSum} !== admitted ${admitted}`);
   }
-  return 'hold';
+  return {
+    runner,
+    usesController,
+    offered,
+    admitted,
+    rejected: offered - admitted,
+    shortfall: totals.shortfall,
+    excess: totals.excess,
+    regret,
+    normalizedRegret: offered === 0 ? defect(`${runner} offered 0`) : regret / offered,
+    limitsInForce,
+    offeredByWindow,
+    admittedByWindow,
+    limitAfterUpdate,
+    outcomes,
+    perClientAdmitted,
+  };
 }
 
 function replayAdaptive(scenario: ScenarioId, trace: TraceEvent[]): RunnerReport {
   const store = new InMemoryStore();
   let state = createAdaptiveState(CONFIG);
-  const groups = groupWindows(trace);
+  const windows = closeWindows(trace);
+  assertClosedShape(scenario, windows);
   const perClientAdmitted = clientCounts(trace);
   const limitsInForce: number[] = [];
+  const offeredByWindow: number[] = [];
+  const admittedByWindow: number[] = [];
   const limitAfterUpdate: number[] = [];
-  const outcomes: Record<OutcomeName, number> = {
-    increase: 0,
-    decrease: 0,
-    hold: 0,
-  };
+  const outcomes = zeroOutcomes();
   let offered = 0;
   let admitted = 0;
   const totals = { shortfall: 0, excess: 0 };
 
-  for (let index = 0; index < groups.length; index += 1) {
-    const events = groups[index];
+  for (const window of windows) {
     const limitInForce = state.limit;
     limitsInForce.push(limitInForce);
-    const windowStart = calendarWindowStart(events[0].atMs, WINDOW_MS);
-    const resetAt = windowStart + WINDOW_MS;
+    const resetAt = window.windowStart + WINDOW_MS;
     let windowAdmitted = 0;
-    for (const event of events) {
-      const consumed = store.tryConsume(GLOBAL_KEY, windowStart, limitInForce);
+    for (const event of window.events) {
+      if (calendarWindowStart(event.atMs, WINDOW_MS) !== window.windowStart) {
+        defect(`event at ${event.atMs} escaped window ${window.index}`);
+      }
+      const consumed = store.tryConsume(GLOBAL_KEY, window.windowStart, limitInForce);
       const decision = fixedWindowDecision({
         allowed: consumed.allowed,
         count: consumed.count,
@@ -278,15 +402,20 @@ function replayAdaptive(scenario: ScenarioId, trace: TraceEvent[]): RunnerReport
         now: event.atMs,
         resetAt,
       });
+      if (decision.allowed !== consumed.allowed) {
+        defect('fixedWindowDecision.allowed disagrees with tryConsume');
+      }
       if (decision.allowed) {
         windowAdmitted += 1;
         admitted += 1;
         perClientAdmitted[event.clientId] += 1;
       }
     }
-    offered += events.length;
-    const capacity = capacityAt(scenario, index);
-    addScore(totals, events.length, windowAdmitted, capacity);
+    offered += window.events.length;
+    offeredByWindow.push(window.events.length);
+    admittedByWindow.push(windowAdmitted);
+    const capacity = capacityAt(scenario, window.index);
+    addScore(totals, window.events.length, windowAdmitted, capacity);
     const signal = {
       available: true as const,
       congested: windowAdmitted > capacity,
@@ -294,29 +423,30 @@ function replayAdaptive(scenario: ScenarioId, trace: TraceEvent[]): RunnerReport
     };
     const before = state;
     const applied = applyAdaptiveUpdate(CONFIG, state, {
-      windowIndex: index,
+      windowIndex: window.index,
       signal,
     });
+    if (applied.status !== 'applied') {
+      defect(`apply status ${applied.status} for window ${window.index}`);
+    }
     state = applied.state;
     limitAfterUpdate.push(state.limit);
-    outcomes[classifyOutcome(before, signal, state)] += 1;
+    outcomes[classifyOutcome(before, signal)] += 1;
   }
 
-  const regret = totals.shortfall + totals.excess;
-  return {
-    runner: 'adaptive',
+  return finishReport(
+    'adaptive',
+    true,
     offered,
     admitted,
-    rejected: offered - admitted,
-    shortfall: totals.shortfall,
-    excess: totals.excess,
-    regret,
-    normalizedRegret: regret / offered,
+    totals,
     limitsInForce,
-    limitAfterUpdate,
+    offeredByWindow,
+    admittedByWindow,
     outcomes,
     perClientAdmitted,
-  };
+    limitAfterUpdate,
+  );
 }
 
 function replayFixedLimit(
@@ -331,18 +461,20 @@ function replayFixedLimit(
     new InMemoryStore(),
     new FakeClock(BASE),
   );
-  const groups = groupWindows(trace);
+  const windows = closeWindows(trace);
+  assertClosedShape(scenario, windows);
   const perClientAdmitted = clientCounts(trace);
   const limitsInForce: number[] = [];
+  const offeredByWindow: number[] = [];
+  const admittedByWindow: number[] = [];
   let offered = 0;
   let admitted = 0;
   const totals = { shortfall: 0, excess: 0 };
 
-  for (let index = 0; index < groups.length; index += 1) {
-    const events = groups[index];
+  for (const window of windows) {
     limitsInForce.push(limit);
     let windowAdmitted = 0;
-    for (const event of events) {
+    for (const event of window.events) {
       const decision = limiter.consume(keyFor(event), event.atMs);
       if (decision.allowed) {
         windowAdmitted += 1;
@@ -350,23 +482,24 @@ function replayFixedLimit(
         perClientAdmitted[event.clientId] += 1;
       }
     }
-    offered += events.length;
-    addScore(totals, events.length, windowAdmitted, capacityAt(scenario, index));
+    offered += window.events.length;
+    offeredByWindow.push(window.events.length);
+    admittedByWindow.push(windowAdmitted);
+    addScore(totals, window.events.length, windowAdmitted, capacityAt(scenario, window.index));
   }
 
-  const regret = totals.shortfall + totals.excess;
-  return {
+  return finishReport(
     runner,
+    false,
     offered,
     admitted,
-    rejected: offered - admitted,
-    shortfall: totals.shortfall,
-    excess: totals.excess,
-    regret,
-    normalizedRegret: regret / offered,
+    totals,
     limitsInForce,
+    offeredByWindow,
+    admittedByWindow,
+    zeroOutcomes(),
     perClientAdmitted,
-  };
+  );
 }
 
 function replayScenario(scenario: ScenarioId): {
@@ -380,26 +513,14 @@ function replayScenario(scenario: ScenarioId): {
   const oracleLimit = initialCapacity(scenario);
   return {
     scenario,
-    inPassSet: PASS_SET.includes(scenario),
+    inPassSet: PASS_SET.includes(scenario as PassScenario),
     initialCapacity: oracleLimit,
     traceLength: trace.length,
     runners: [
       replayAdaptive(scenario, trace),
       replayFixedLimit(scenario, trace, 'static-floor', FLOOR, () => GLOBAL_KEY),
-      replayFixedLimit(
-        scenario,
-        trace,
-        'static-ceiling',
-        CEILING,
-        () => GLOBAL_KEY,
-      ),
-      replayFixedLimit(
-        scenario,
-        trace,
-        'static-oracle',
-        oracleLimit,
-        () => GLOBAL_KEY,
-      ),
+      replayFixedLimit(scenario, trace, 'static-ceiling', CEILING, () => GLOBAL_KEY),
+      replayFixedLimit(scenario, trace, 'static-oracle', oracleLimit, () => GLOBAL_KEY),
       replayFixedLimit(
         scenario,
         trace,
@@ -411,8 +532,10 @@ function replayScenario(scenario: ScenarioId): {
   };
 }
 
+type ScenarioReport = ReturnType<typeof replayScenario>;
+
 function runnerReport(
-  scenarios: ReturnType<typeof replayScenario>[],
+  scenarios: ScenarioReport[],
   scenario: ScenarioId,
   runner: RunnerId,
 ): RunnerReport {
@@ -420,17 +543,22 @@ function runnerReport(
     .find((entry) => entry.scenario === scenario)
     ?.runners.find((entry) => entry.runner === runner);
   if (!found) {
-    throw new Error(`missing ${runner} report for ${scenario}`);
+    defect(`missing ${runner} report for ${scenario}`);
   }
   return found;
 }
 
-function meanNormalized(
-  scenarios: ReturnType<typeof replayScenario>[],
+function meanOf(
+  scenarios: ScenarioReport[],
   runner: RunnerId,
+  value: (report: RunnerReport) => number,
 ): number {
+  const ids = PASS_SET as readonly string[];
+  if (ids.length !== 5 || ids.includes('mixed')) {
+    defect('pass set must be the five frozen scenarios and must exclude mixed');
+  }
   const total = PASS_SET.reduce(
-    (sum, scenario) => sum + runnerReport(scenarios, scenario, runner).normalizedRegret,
+    (sum, scenario) => sum + value(runnerReport(scenarios, scenario, runner)),
     0,
   );
   return total / PASS_SET.length;
@@ -442,9 +570,17 @@ function sameNumbers(left: readonly number[], right: readonly number[]): boolean
   );
 }
 
-function handMismatches(
-  scenarios: ReturnType<typeof replayScenario>[],
-): string[] {
+function formatMismatch(
+  scenario: string,
+  runner: string,
+  field: string,
+  actual: string,
+  expected: string,
+): string {
+  return `verification defect: hand mismatch scenario=${scenario} runner=${runner} field=${field} actual=${actual} expected=${expected}`;
+}
+
+function handMismatches(scenarios: ScenarioReport[]): string[] {
   const mismatches: string[] = [];
   const checked: Array<keyof typeof HAND_REGRET> = [
     'adaptive',
@@ -452,25 +588,165 @@ function handMismatches(
     'static-ceiling',
     'static-oracle',
   ];
+
+  if (capacityAt('capacity-change', 0) !== 16 || capacityAt('capacity-change', 4) !== 4) {
+    defect('capacity-change plant capacity was changed');
+  }
+
   for (const scenario of PASS_SET) {
     for (const runner of checked) {
-      const actual = runnerReport(scenarios, scenario, runner).regret;
-      const expected = HAND_REGRET[runner][scenario];
-      if (actual !== expected) {
+      const report = runnerReport(scenarios, scenario, runner);
+      if (report.regret !== HAND_REGRET[runner][scenario]) {
         mismatches.push(
-          `${scenario} ${runner} regret ${actual} !== hand ${expected}`,
+          formatMismatch(
+            scenario,
+            runner,
+            'regret',
+            String(report.regret),
+            String(HAND_REGRET[runner][scenario]),
+          ),
+        );
+      }
+      if (report.offered !== HAND_OFFERED[scenario]) {
+        mismatches.push(
+          formatMismatch(
+            scenario,
+            runner,
+            'offered',
+            String(report.offered),
+            String(HAND_OFFERED[scenario]),
+          ),
         );
       }
     }
-    const limits = runnerReport(scenarios, scenario, 'adaptive').limitsInForce;
-    const expectedLimits = HAND_ADAPTIVE_LIMITS[scenario];
-    if (!sameNumbers(limits, expectedLimits)) {
+
+    const adaptive = runnerReport(scenarios, scenario, 'adaptive');
+    if (!sameNumbers(adaptive.limitsInForce, HAND_ADAPTIVE_LIMITS[scenario])) {
       mismatches.push(
-        `${scenario} adaptive limits [${limits.join(',')}] !== hand [${expectedLimits.join(',')}]`,
+        formatMismatch(
+          scenario,
+          'adaptive',
+          'limitsInForce',
+          adaptive.limitsInForce.join(','),
+          HAND_ADAPTIVE_LIMITS[scenario].join(','),
+        ),
+      );
+    }
+    if (!sameNumbers(adaptive.admittedByWindow, HAND_ADAPTIVE_ADMITTED[scenario])) {
+      mismatches.push(
+        formatMismatch(
+          scenario,
+          'adaptive',
+          'admittedByWindow',
+          adaptive.admittedByWindow.join(','),
+          HAND_ADAPTIVE_ADMITTED[scenario].join(','),
+        ),
       );
     }
   }
+
+  const burst = runnerReport(scenarios, 'burst', 'adaptive');
+  const burstRejected = burst.offeredByWindow[3] - burst.admittedByWindow[3];
+  if (burst.admittedByWindow[3] !== 4 || burstRejected !== 36) {
+    mismatches.push(
+      formatMismatch(
+        'burst',
+        'adaptive',
+        'window3',
+        `admitted=${burst.admittedByWindow[3]} rejected=${burstRejected}`,
+        'admitted=4 rejected=36',
+      ),
+    );
+  }
+  if (burst.limitsInForce[4] !== 5 || burst.limitAfterUpdate?.[3] !== 5) {
+    mismatches.push(
+      formatMismatch(
+        'burst',
+        'adaptive',
+        'followingLimit',
+        `inForce=${burst.limitsInForce[4]} after=${burst.limitAfterUpdate?.[3]}`,
+        '5',
+      ),
+    );
+  }
+
+  const capacity = runnerReport(scenarios, 'capacity-change', 'adaptive');
+  if (capacity.admittedByWindow[4] !== 5) {
+    mismatches.push(
+      formatMismatch(
+        'capacity-change',
+        'adaptive',
+        'window4Admitted',
+        String(capacity.admittedByWindow[4]),
+        '5',
+      ),
+    );
+  }
+  if (capacity.limitsInForce[5] !== 2) {
+    mismatches.push(
+      formatMismatch(
+        'capacity-change',
+        'adaptive',
+        'window5LimitInForce',
+        String(capacity.limitsInForce[5]),
+        '2',
+      ),
+    );
+  }
+
+  const oracle = runnerReport(scenarios, 'capacity-change', 'static-oracle');
+  if (oracle.limitsInForce.some((limit) => limit !== 16)) {
+    mismatches.push(
+      formatMismatch(
+        'capacity-change',
+        'static-oracle',
+        'limitsInForce',
+        oracle.limitsInForce.join(','),
+        '16 on every window',
+      ),
+    );
+  }
+
+  const mixed = runnerReport(scenarios, 'mixed', 'adaptive');
+  if (mixed.offered !== HAND_OFFERED.mixed) {
+    mismatches.push(
+      formatMismatch('mixed', 'adaptive', 'offered', String(mixed.offered), '272'),
+    );
+  }
+  const heavy = mixed.perClientAdmitted['ip:heavy'];
+  if (heavy !== 36) {
+    mismatches.push(
+      formatMismatch('mixed', 'adaptive', 'ip:heavy', String(heavy), '36'),
+    );
+  }
+  for (let light = 0; light < 4; light += 1) {
+    const client = `ip:light-${light}`;
+    const actual = mixed.perClientAdmitted[client];
+    if (actual !== 0) {
+      mismatches.push(formatMismatch('mixed', 'adaptive', client, String(actual), '0'));
+    }
+  }
+
   return mismatches;
+}
+
+function assertMeansFollowFormula(
+  scenarios: ScenarioReport[],
+  means: Record<keyof typeof HAND_REGRET, number>,
+): void {
+  const runners = Object.keys(means) as Array<keyof typeof HAND_REGRET>;
+  for (const runner of runners) {
+    const formula = meanOf(
+      scenarios,
+      runner,
+      (report) => report.regret / report.offered,
+    );
+    if (means[runner] !== formula) {
+      defect(
+        `printed ${runner} mean ${means[runner]} does not follow the approved formula ${formula}`,
+      );
+    }
+  }
 }
 
 function main(): void {
@@ -479,15 +755,31 @@ function main(): void {
   const elapsedMs = Number(process.hrtime.bigint() - wallStart) / 1e6;
 
   const means = {
-    adaptive: meanNormalized(scenarios, 'adaptive'),
-    'static-floor': meanNormalized(scenarios, 'static-floor'),
-    'static-ceiling': meanNormalized(scenarios, 'static-ceiling'),
-    'static-oracle': meanNormalized(scenarios, 'static-oracle'),
+    adaptive: meanOf(scenarios, 'adaptive', (report) => report.normalizedRegret),
+    'static-floor': meanOf(scenarios, 'static-floor', (report) => report.normalizedRegret),
+    'static-ceiling': meanOf(
+      scenarios,
+      'static-ceiling',
+      (report) => report.normalizedRegret,
+    ),
+    'static-oracle': meanOf(scenarios, 'static-oracle', (report) => report.normalizedRegret),
   };
+  assertMeansFollowFormula(scenarios, means);
+
+  const mismatches = handMismatches(scenarios);
+  const handMatched = mismatches.length === 0;
   const adaptiveBeatsStaticFloor = means.adaptive < means['static-floor'];
   const adaptiveBeatsStaticCeiling = means.adaptive < means['static-ceiling'];
-  const mismatches = handMismatches(scenarios);
-  const passed = adaptiveBeatsStaticFloor && adaptiveBeatsStaticCeiling;
+  const comparisonHolds = adaptiveBeatsStaticFloor && adaptiveBeatsStaticCeiling;
+
+  let conclusion: Conclusion;
+  if (!handMatched) {
+    conclusion = 'verification-defect';
+  } else if (!comparisonHolds) {
+    conclusion = 'negative-experiment';
+  } else {
+    conclusion = 'passed';
+  }
 
   const report = {
     mode: 'adaptive-compare',
@@ -506,30 +798,45 @@ function main(): void {
       comparisons: {
         adaptiveBeatsStaticFloor,
         adaptiveBeatsStaticCeiling,
-        passed,
+        passed: comparisonHolds,
       },
       handCalculation: {
-        matched: mismatches.length === 0,
+        matched: handMatched,
         mismatches,
       },
+      conclusion,
     },
     observational: {
       elapsedMs: Number(elapsedMs.toFixed(3)),
     },
     notes: [
       'Same ordered trace per scenario, fresh state per runner',
+      'A window closes when the next event has a larger calendar start, or when the trace ends',
       'Global runners consume key "global". per-client-fixed-window-reference is orientation only and is not a pass baseline',
       'Pass set is steady, burst, sustained-overload, recovery, and capacity-change. Mixed is reported and excluded from the mean',
       'Pass iff adaptive mean normalized regret is strictly below static-floor and static-ceiling. The oracle is a reference',
       'Congestion is admitted > plant capacity. Rejects are not congestion',
+      'conclusion is a negative experiment only when handCalculation.matched is true and a comparison then fails',
       'observational elapsedMs is machine-dependent and is not a pass gate',
     ],
   };
 
-  console.log(JSON.stringify(report, null, 2));
-  if (!passed || mismatches.length > 0) {
+  if (!handMatched) {
+    console.log(JSON.stringify(report, null, 2));
     console.error(
-      'Adaptive comparison did not meet the pre-registered result. Parameters were not changed.',
+      'verification defect: hand mismatch. Expected values were not changed. This is not a negative experiment.',
+    );
+    for (const line of mismatches) {
+      console.error(line);
+    }
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(JSON.stringify(report, null, 2));
+  if (!comparisonHolds) {
+    console.error(
+      'negative experiment: adaptive mean normalized regret is not strictly below both static floor and static ceiling. Parameters, traces, weights, and the pass set were not changed.',
     );
     process.exitCode = 1;
   }

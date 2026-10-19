@@ -97,7 +97,7 @@ Recording happens after the limiter has already returned. A throw from the recor
 
 ## Adaptive global budget (Milestone 6)
 
-`createAdaptiveState` / `applyAdaptiveUpdate` in `apps/api/src/core/adaptive-policy.ts` are a pure controller. They do not read a clock, store, or capacity. `npm run load:adaptive` replays one ordered trace per scenario onto a fresh in-memory fixed-window counter. Global runners use the key `global`. The per-client fixed-window column at limit 8 is orientation only.
+`createAdaptiveState` / `applyAdaptiveUpdate` in `apps/api/src/core/adaptive-policy.ts` are a pure controller. They do not read a clock, store, or capacity. `npm run load:adaptive` builds one ordered trace per scenario and replays it from index 0 on a fresh in-memory fixed-window counter for every runner. A window closes when the next event has a larger calendar start, or when the trace ends. The limit in force during the window is the limit before that update. Global runners use the key `global`. The per-client fixed-window column at limit 8 is orientation only.
 
 Frozen parameters: `floor = 1`, `initial = 1`, `ceiling = 32`, decrease `max(floor, floor(limit / 2))`, increase `+1` only when the window was saturated and healthy, and one hold after a decrease. The plant sets `congested` only when `admitted > C`. Rejects are not congestion. `windowMs` stays 1000.
 
@@ -113,8 +113,8 @@ Recorded regrets (adaptive / floor / ceiling / oracle):
 | recovery | 18 | 36 | 72 | 0 |
 | capacity change | 102 | 132 | 48 | 48 |
 
-Printed means: adaptive `0.21637605042016808`, floor `0.456281512605042`, ceiling `0.34344537815126047`, oracle `0.05`. Both comparisons passed, and the pass-set regrets and adaptive limits matched the hand calculation. Steady ceiling regret is 0. Capacity change favors the ceiling (48 versus 102). The mean still favors adaptive because the ceiling's overload and recovery excess is larger. On mixed traffic the adaptive limits stay at or below 8, so all 36 admits go to `ip:heavy` and the four light clients get 0. That global prefix is not a fairness scheduler.
+Printed means from the verified run: adaptive `0.21637605042016808`, floor `0.456281512605042`, ceiling `0.34344537815126047`, oracle `0.05`. `correctness.conclusion` was `passed`. Both comparisons held, and the pass-set regrets, adaptive limits, and admitted series matched the hand calculation. Steady ceiling regret is 0. Capacity change favors the ceiling (48 versus 102). The mean still favors adaptive because the ceiling's overload and recovery excess is larger. On mixed traffic the adaptive limits stay at or below 8, so all 36 admits go to `ip:heavy` and the four light clients get 0. That global prefix is not a fairness scheduler.
 
-Wall-clock time in the tool is observational and is not part of the pass.
+Wall-clock time in the tool is observational and is not part of the pass. A thrown trace or a hand mismatch is a verification defect: the process returns nonzero and does not record an experimental conclusion. A negative experiment is recorded only after those assertions pass and a comparison then fails. This run did not take that path. Parameters were not retuned.
 
 **Stage 3 decision: do not mount this controller.** The demo route does no work, and the process has no capacity or latency SLO. M5 series do not carry a congestion bit. The plant exists only in the load tool. Wiring the controller to Nest or Redis would have no honest signal: a missing signal must freeze the limit, and the limiter's own rejects must not count as congestion. A later shared budget would also need one signal across processes. Process-local M5 counters are not that signal. No HTTP flag, Redis budget, or Prometheus gauge was added.
