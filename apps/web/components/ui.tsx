@@ -96,15 +96,15 @@ export function SkeletonBlock({ label, kind }: { label: string; kind: "metric" |
       {kind === "metric" ? (
         <div className="grid gap-3">
           <div className="skeleton-block h-3 w-24" />
-          <div className="skeleton-block metric-figure h-7 w-32" />
+          <div className="skeleton-block metric-figure w-32" />
           <div className="skeleton-block h-3 w-40" />
         </div>
       ) : null}
-      {kind === "chart" ? <div className="skeleton-block h-[var(--chart-height)] w-full" /> : null}
+      {kind === "chart" ? <div className="skeleton-block h-(--chart-height) w-full" /> : null}
       {kind === "table" ? (
         <div className="grid gap-2">
           {Array.from({ length: 5 }, (_, index) => (
-            <div key={index} className="skeleton-block h-[18px] w-full" />
+            <div key={index} className="skeleton-block h-4.5 w-full" />
           ))}
         </div>
       ) : null}

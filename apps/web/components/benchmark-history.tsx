@@ -115,7 +115,7 @@ export function BenchmarkHistory() {
               {items.map((item) => {
                 const meta = new Map(artifactMetadata(item.report).map((row) => [row.label, row.value]));
                 return (
-                  <li key={item.id} className="rounded-[var(--radius-control)] border border-line p-3">
+                  <li key={item.id} className="rounded-(--radius-control) border border-line p-3">
                     <button type="button" className="text-link type-control" onClick={() => setSelectedId(item.id)}>
                       {item.fileName}
                     </button>

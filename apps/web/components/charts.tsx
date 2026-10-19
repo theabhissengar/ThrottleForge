@@ -132,7 +132,7 @@ export function OutcomeTrendChart({
   points: { label: string; allowed: number; rejected: number }[];
 }) {
   const palette = useChartPalette();
-  if (!palette) return <div className="skeleton-block h-[var(--chart-height)] w-full" />;
+  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
   return (
     <div role="img" aria-label="Allowed and rejected decisions in each scrape interval. The vertical axis is a count of decisions and starts at zero. Allowed is a solid line. Rejected is dashed.">
       <ResponsiveContainer width="100%" height={280}>
@@ -158,7 +158,7 @@ export function BucketChart({
   const palette = useChartPalette();
   const narrow = useNarrow();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-[var(--chart-height)] w-full" />;
+  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
   return (
     <div role="img" aria-label="Cumulative limiter-operation observations at each histogram upper bound. This is not an exact percentile.">
       <ResponsiveContainer width="100%" height={280}>
@@ -181,7 +181,7 @@ export function CompareBarChart({
 }) {
   const palette = useChartPalette();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-[var(--chart-height)] w-full" />;
+  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
   return (
     <div role="img" aria-label="Allowed and rejected counts for each algorithm. The vertical axis is a request count and starts at zero.">
       <ResponsiveContainer width="100%" height={280}>
@@ -206,7 +206,7 @@ export function RegretChart({
 }) {
   const palette = useChartPalette();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-[var(--chart-height)] w-full" />;
+  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
   return (
     <div role="img" aria-label="Regret for each runner in the selected scenario. Regret is shortfall plus excess. The axis starts at zero.">
       <ResponsiveContainer width="100%" height={280}>
@@ -236,7 +236,7 @@ export function WindowChart({
 }) {
   const palette = useChartPalette();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-[var(--chart-height)] w-full" />;
+  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
   return (
     <div role="img" aria-label="Values by window index. The vertical axis starts at zero.">
       <ResponsiveContainer width="100%" height={280}>

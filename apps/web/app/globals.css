@@ -236,6 +236,10 @@ input:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+.metric-figure {
+  height: 28px;
+}
+
 @media (max-width: 639px) {
   .type-display {
     font-size: 22px;

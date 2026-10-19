@@ -16,7 +16,7 @@ export function Wordmark({ clip = false }: { clip?: boolean }) {
     <span className="flex min-w-0 items-center gap-2">
       <Mark className="size-8 shrink-0" />
       <span className={clip ? "wordmark-copy" : undefined}>
-        <span className="block text-[14px] leading-5 font-semibold tracking-[-0.02em]">ThrottleForge</span>
+        <span className="block text-sm font-semibold tracking-[-0.02em]">ThrottleForge</span>
         <span className="type-secondary block text-ink-dim">Traffic control</span>
       </span>
     </span>

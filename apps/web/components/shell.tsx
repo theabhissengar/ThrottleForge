@@ -81,7 +81,7 @@ function ShellFrame({ children }: { children: ReactNode }) {
     <>
       <a
         href="#content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-[var(--radius-control)] focus:bg-panel focus:px-3 focus:py-2"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-(--radius-control) focus:bg-panel focus:px-3 focus:py-2"
       >
         Skip to content
       </a>
