@@ -12,6 +12,7 @@ import {
   RateLimitStoreKind,
 } from './rate-limit.config';
 import { NestIdentityExtractor } from './nest-identity.extractor';
+import { RateLimitPolicyController } from './policy.controller';
 import { RateLimitGuard } from './rate-limit.guard';
 import {
   defaultRateLimitProviders,
@@ -20,6 +21,7 @@ import {
 } from './rate-limit.service';
 
 @Module({
+  controllers: [RateLimitPolicyController],
   providers: [
     ...defaultRateLimitProviders,
     {

@@ -89,7 +89,7 @@ export function DocsIndex() {
       <header>
         <h1 className="type-display">Documentation</h1>
         <p className="type-body mt-2 text-ink-dim">
-          Plain-language notes for each page. They describe only what you can see on the screen.
+          Plain-language notes for each page. Most of them describe what you can see on the screen. The load commands run in a terminal on your own computer, and this page does not start them.
         </p>
       </header>
       <nav aria-label="Documentation topics" className="card">

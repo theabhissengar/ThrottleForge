@@ -16,6 +16,11 @@ export class NestIdentityExtractor {
     private readonly allowTestClientId: boolean,
   ) {}
 
+  /** The flag this extractor already uses. Does not re-read the environment. */
+  testClientOverrideEnabled(): boolean {
+    return this.allowTestClientId;
+  }
+
   extract(request: Request): ClientId {
     if (this.allowTestClientId) {
       const override = request.header(TEST_CLIENT_ID_HEADER);

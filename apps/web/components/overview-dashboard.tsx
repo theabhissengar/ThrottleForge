@@ -1,12 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { BucketChart, OutcomeTrendChart } from "@/components/charts";
+import { DemoProbe } from "@/components/demo-probe";
 import { requestLiveRefresh, useLive } from "@/components/live-provider";
 import { Callout, DataTable, MetricSummary, PageHeader, Panel, presenceNote, SkeletonBlock } from "@/components/ui";
+import { readPolicyPayload, redisFailureLabel, type PolicyRead } from "@/lib/demo/policy";
 import { formatCount, formatSeconds } from "@/lib/metrics/format";
 
 export function OverviewDashboard() {
   const live = useLive();
+  const policy = usePolicy();
   const snapshot = live.snapshot;
   const idle =
     snapshot !== null &&
@@ -27,26 +31,36 @@ export function OverviewDashboard() {
           A cumulative counter decreased. The trend shows only the current segment, after a process restart or counter reset.
         </Callout>
       ) : null}
+      <Panel title="Availability" about="overview">
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <Fact
+            term="Health"
+            value={
+              !live.attempted
+                ? "Checking"
+                : live.health === "reachable"
+                  ? live.healthDetail ?? "ok"
+                  : live.healthDetail ?? "Unreachable"
+            }
+          />
+          <Fact term="Metrics" value={!live.attempted ? "Checking" : live.metricsError ? live.metricsError : "Scrape parsed"} />
+          <Fact term="Store" value={snapshot?.store ?? "Not observed yet"} />
+          <Fact term="Algorithm" value={snapshot?.algorithm ?? "Not observed yet"} />
+          <Fact term="Limit" value={policyFact(policy, (item) => String(item.limit))} unavailable={policy.state !== "ok"} />
+          <Fact term="Window" value={policyFact(policy, (item) => `${item.windowMs} ms`)} unavailable={policy.state !== "ok"} />
+          <Fact term="Redis failure mode" value={policyFact(policy, redisFailureLabel)} unavailable={policy.state !== "ok"} />
+        </dl>
+      </Panel>
+      <DemoProbe policy={policy} />
       {!live.attempted ? (
         <div className="grid gap-4 md:grid-cols-2">
-          <SkeletonBlock label="Loading API availability" kind="metric" />
           <SkeletonBlock label="Loading allowed decisions" kind="metric" />
           <SkeletonBlock label="Loading rejected decisions" kind="metric" />
+          <SkeletonBlock label="Loading degraded admissions" kind="metric" />
           <SkeletonBlock label="Loading limiter operation time" kind="chart" />
         </div>
       ) : (
         <>
-          <Panel title="Availability" about="overview">
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <Fact term="Health" value={live.health === "reachable" ? live.healthDetail ?? "ok" : live.healthDetail ?? "Unreachable"} />
-              <Fact term="Metrics" value={live.metricsError ? live.metricsError : "Scrape parsed"} />
-              <Fact term="Store" value={snapshot?.store ?? "Not observed yet"} />
-              <Fact term="Algorithm" value={snapshot?.algorithm ?? "Not observed yet"} />
-              <Fact term="Limit" value="Not published by the API" unavailable />
-              <Fact term="Window" value="Not published by the API" unavailable />
-              <Fact term="Redis failure mode" value="Not published by the API" unavailable />
-            </dl>
-          </Panel>
           {snapshot ? (
             <>
               {idle ? <p className="empty-state type-body">No limiter decisions recorded in this process.</p> : null}
@@ -185,6 +199,32 @@ export function OverviewDashboard() {
       )}
     </div>
   );
+}
+
+function policyFact(policy: PolicyRead | { state: "loading" }, present: (policy: Extract<PolicyRead, { state: "ok" }>["policy"]) => string): string {
+  if (policy.state === "loading") return "Loading";
+  if (policy.state === "unavailable") return "Unavailable";
+  return present(policy.policy);
+}
+
+function usePolicy(): PolicyRead | { state: "loading" } {
+  const [policy, setPolicy] = useState<PolicyRead | { state: "loading" }>({ state: "loading" });
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/policy", { cache: "no-store" });
+        const body = (await response.json()) as unknown;
+        if (!cancelled) setPolicy(readPolicyPayload(body));
+      } catch {
+        if (!cancelled) setPolicy({ state: "unavailable" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return policy;
 }
 
 function Fact({ term, value, unavailable = false }: { term: string; value: string; unavailable?: boolean }) {

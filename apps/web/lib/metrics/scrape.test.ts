@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FETCH_TIMEOUT_MS, HEALTH_BYTE_CAP, METRICS_BYTE_CAP, readCapped } from './read-capped'
-import { liveTargets } from './origin'
+import { apiUrl, liveTargets } from './origin'
 import { scrapeApi } from './scrape'
 
 describe('liveTargets', () => {
@@ -24,6 +24,16 @@ describe('liveTargets', () => {
   it('rejects a non-http origin', () => {
     expect(() => liveTargets('file:///tmp/metrics', 'http://127.0.0.1:3001/api/live')).toThrow(
       /http or https/,
+    )
+  })
+})
+
+describe('apiUrl', () => {
+  it('builds only the fixed demo and policy paths', () => {
+    const request = 'http://127.0.0.1:3001/api/demo-probe?url=http://evil.test&origin=http://169.254.169.254'
+    expect(apiUrl('http://127.0.0.1:3000/ignored', request, 'demo')).toBe('http://127.0.0.1:3000/api/demo')
+    expect(apiUrl('https://api.internal:3000', request, 'policy')).toBe(
+      'https://api.internal:3000/api/rate-limit/policy',
     )
   })
 })

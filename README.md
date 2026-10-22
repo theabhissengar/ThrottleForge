@@ -57,7 +57,7 @@ The dashboard is a second process on port **3001**. It does not replace `npm run
 npm run dev:web
 ```
 
-Open `http://127.0.0.1:3001`. Optional: `npm run dev:stack` runs the API watch process and the dashboard together. `THROTTLEFORGE_API_ORIGIN` in `apps/web/.env` defaults to `http://127.0.0.1:3000` when unset. See `apps/web/.env.example`. The dashboard only calls `GET /health` and `GET /metrics` through its own server. It does not call `GET /api/demo`. Redis is not required when the API uses the default memory store.
+Open `http://127.0.0.1:3001`. Optional: `npm run dev:stack` runs the API watch process and the dashboard together. `THROTTLEFORGE_API_ORIGIN` in `apps/web/.env` defaults to `http://127.0.0.1:3000` when unset. See `apps/web/.env.example`. The dashboard calls `GET /health`, `GET /metrics`, and `GET /api/rate-limit/policy` through its own server. The Request demonstration also calls `GET /api/demo` from that server. Redis is not required when the API uses the default memory store.
 
 | Route | Rate limited? |
 |-------|----------------|
@@ -105,6 +105,46 @@ RATE_LIMIT=3 RATE_WINDOW_MS=10000 npm run start:dev
   - `X-RateLimit-Remaining`
   - `X-RateLimit-Reset` (Unix epoch **seconds**)
 - **Reject:** `429` with `Retry-After` (integer seconds) and the same `X-RateLimit-*` headers (`Remaining` is `0`).
+- **Redis fail-closed:** `503` with message `Rate limit store unavailable`. Quota headers and `Retry-After` are omitted.
+- **Redis fail-open:** `200` with only `X-RateLimit-Mode: degraded`. Quota headers are omitted because the shared count is unknown.
+
+### Policy snapshot
+
+`GET /api/rate-limit/policy` is read-only. It reports the fixed-window policy the HTTP guard is enforcing. It does not consume quota, change policy, or check that Redis is reachable.
+
+```json
+{
+  "algorithm": "fixed_window",
+  "limit": 5,
+  "windowMs": 60000,
+  "store": "memory",
+  "redisErrorPolicy": "closed",
+  "testClientOverrideEnabled": false
+}
+```
+
+`algorithm` is `fixed_window` on this HTTP path. `store` is the configured implementation, `memory` or `redis`. `redisErrorPolicy` is `open` or `closed`. `testClientOverrideEnabled` is true only when `ALLOW_TEST_CLIENT_ID=true` and `NODE_ENV` is `test` or `development`. The response does not include a Redis URL, prefix, timeout, or credential. Other HTTP methods are not accepted.
+
+### Request demonstration
+
+The web app can send exactly 10 sequential `GET /api/demo` requests through `POST /api/demo-probe` with the body `{ "count": 10 }`. The browser does not choose the API host. The web server calls only `THROTTLEFORGE_API_ORIGIN` plus the fixed `/api/demo` path, and it does not forward caller headers. The API therefore counts the web server’s source address, so dashboard visitors share one quota. The probe does not send `X-Test-Client-Id`.
+
+Each upstream call times out at 2 seconds. The whole batch stops at 15 seconds and keeps responses that already finished. One Node process runs one batch at a time, then waits 30 seconds. That lock and cooldown do not coordinate other workers or replicas, and they are not a global rate limit.
+
+An upstream `429` is a row in the batch with outcome `rate_limited`. A `429` from `POST /api/demo-probe` itself means the cooldown is active: `{ "error": "cooldown", "retryAfterSec": 30 }`. That response has no batch results. The page shows it as “Demo cooldown active”.
+
+| `NODE_ENV` | `THROTTLEFORGE_DEMO_PROBE` | Probe |
+| --- | --- | --- |
+| `development`, `test`, or unset | unset or `enabled` | on |
+| `development`, `test`, or unset | `disabled` or any other value | off |
+| `production` | `enabled` | on, and a canonical origin is also required |
+| `production` | unset, `disabled`, or any other value | off |
+
+`THROTTLEFORGE_DEMO_PROBE=disabled` turns the probe off in every environment. In production, only the exact value `enabled` turns it on. Any other value leaves it off.
+
+Local development accepts the probe only when the incoming request URL is `http` or `https` on `localhost`, `127.0.0.1`, or `::1`, and the `Origin` header is that exact origin. `http://127.0.0.1:3001` and `http://localhost:3001` are different origins. Production, and any deployment behind a proxy, must set `THROTTLEFORGE_CANONICAL_ORIGIN` to the browser-visible origin, for example `https://demo.example.com`. The value must be exactly that origin, with no user, path, query, or hash. `Origin`, `Host`, `X-Forwarded-Host`, and `X-Forwarded-Proto` are not used to decide which origin is trusted. An invalid canonical origin, a missing `Origin`, or a mismatch rejects the probe and does not call the API.
+
+An enabled probe generates real requests against the configured API. The process-local cooldown is not enough to call that safe for unrestricted public use. Operators who set `enabled` on a public site still need their own edge controls.
 
 ## Algorithms
 
@@ -226,7 +266,7 @@ Start a second process with `PORT=3001` and the same Redis settings.
 - **Redis is fixed-window only.** One Lua `EVAL` checks, increments only on allow, resets a stale window, and sets a relative TTL. Instances need synchronized clocks. Active keys in the current window are still unbounded; expiry removes idle windows.
 - Counters are **transient**; there is no relational database by design.
 - **`GET /metrics` is unauthenticated**, same as `/health`, and it is not behind the rate-limit guard. Restrict it to localhost or a trusted monitoring network unless public exposure is explicitly intended.
-- **The dashboard is read-only and process-local.** `apps/web` talks to the API over HTTP only. It does not import `apps/api/src/core`. Live charts are scrape deltas collected in the browser. Committed comparison and adaptive figures are tool transcripts, not a production SLO.
+- **The dashboard scrapes this API and can run one small demonstration.** `apps/web` talks to the API over HTTP only. It does not import `apps/api/src/core`. Live charts are scrape deltas collected in the browser. The Request demonstration sends 10 real `GET /api/demo` calls and is separate from those charts. Committed comparison and adaptive figures are tool transcripts, not a production SLO. Algorithm Lab and Adaptive Explorer do not select the live HTTP algorithm, and the adaptive controller does not handle this API’s traffic.
 
 ## API package layout
 

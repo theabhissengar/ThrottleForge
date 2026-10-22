@@ -34,6 +34,17 @@ import {
 export const RATE_LIMIT_CLOCK = 'RATE_LIMIT_CLOCK';
 export const RATE_LIMIT_METRICS = 'RATE_LIMIT_METRICS';
 
+/** The only algorithm the HTTP guard records and enforces. */
+export const HTTP_RATE_LIMIT_ALGORITHM = 'fixed_window' as const;
+
+export type EnforcedHttpPolicy = {
+  algorithm: typeof HTTP_RATE_LIMIT_ALGORITHM;
+  limit: number;
+  windowMs: number;
+  store: RateLimitStoreKind;
+  redisErrorPolicy: RedisFailureMode;
+};
+
 export type RateLimitConsumeResult =
   | { type: 'ok'; decision: Decision }
   | { type: 'unavailable' };
@@ -43,6 +54,7 @@ export class RateLimitService implements OnModuleInit, OnModuleDestroy {
   private syncLimiter?: FixedWindowLimiter;
   private asyncLimiter?: AsyncFixedWindowLimiter;
   private memoryStore?: InMemoryStore;
+  private enforcedPolicy?: FixedWindowPolicy;
 
   constructor(
     @Inject(RATE_LIMIT_POLICY) private readonly policy: FixedWindowPolicy,
@@ -59,6 +71,7 @@ export class RateLimitService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     const validated = validateFixedWindowPolicy(this.policy);
+    this.enforcedPolicy = validated;
     if (this.storeKind === 'memory') {
       this.memoryStore = new InMemoryStore();
       this.syncLimiter = new FixedWindowLimiter(
@@ -102,6 +115,23 @@ export class RateLimitService implements OnModuleInit, OnModuleDestroy {
     return this.onRedisError;
   }
 
+  /**
+   * The policy passed to the active limiter, plus the store and Redis
+   * failure mode that limiter was constructed with. Does not read env.
+   */
+  httpPolicy(): EnforcedHttpPolicy {
+    if (!this.enforcedPolicy) {
+      throw new Error('Rate limiter is not initialized');
+    }
+    return {
+      algorithm: HTTP_RATE_LIMIT_ALGORITHM,
+      limit: this.enforcedPolicy.limit,
+      windowMs: this.enforcedPolicy.windowMs,
+      store: this.storeKind,
+      redisErrorPolicy: this.onRedisError,
+    };
+  }
+
   consume(clientId: string): RateLimitConsumeResult | Promise<RateLimitConsumeResult> {
     if (this.syncLimiter) {
       const start = process.hrtime.bigint();
@@ -139,7 +169,7 @@ export class RateLimitService implements OnModuleInit, OnModuleDestroy {
   private observation(durationSeconds: number): MetricObservation {
     return {
       store: this.storeKind,
-      algorithm: 'fixed_window',
+      algorithm: HTTP_RATE_LIMIT_ALGORITHM,
       durationSeconds,
     };
   }

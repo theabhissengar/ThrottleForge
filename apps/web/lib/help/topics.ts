@@ -52,8 +52,45 @@ export const HELP_TOPICS: HelpTopic[] = [
         heading: "When a number is missing",
         paragraphs: [
           "“No sample” means this reading did not include that count. “0” means the app really reported zero.",
-          "The limit, the time window, and the Redis failure setting are not sent by the app. Those rows say so. They are not zeros.",
+          "The limit, the time window, and the Redis failure setting come from a separate policy reading. When that reading is available, those rows show it. When it is not, the rows say Unavailable. They are not zeros.",
           "The time chart is how long the limit check itself took. It is not how long the whole request took. The bars are running totals of those times, not one typical time. An average is shown only when there is at least one measurement.",
+        ],
+      },
+      {
+        heading: "The limit this app actually uses",
+        paragraphs: [
+          "Requests to this app use a fixed window. The app counts until the time window ends, then starts again at zero. The policy reading shows that limit, the window length in milliseconds, whether the count is kept in memory or in Redis, and what happens if Redis fails.",
+          "A configured Redis store is not the same as Redis being reachable. The policy reading does not check that Redis answered.",
+        ],
+      },
+      {
+        heading: "Run a small demonstration",
+        paragraphs: [
+          "The Request demonstration section sends 10 real requests to this copy of the app. Press Run demonstration. The table lists each response after the batch finishes. You can run it again after the server cooldown, which is 30 seconds on one web server process. That cooldown is not shared across every copy of the web server, and it is not a general rate limit.",
+          "Demo cooldown active means the web server refused to start another batch yet. It shows how many seconds to wait. That message is not one of the ten results, and it is not the app rejecting a request for using up its quota.",
+        ],
+      },
+      {
+        heading: "What 200, 429, and 503 mean",
+        paragraphs: [
+          "200 with quota headers means the limit check allowed the request. 200 with the mode header set to degraded means the count could not be read and the app let the request through anyway. That is not a normal allow.",
+          "429 in the demonstration table means the shared quota rejected that request. 503 means the store failed and the app did not let the request through. A 503 is not a quota rejection.",
+          "Limit, Remaining, and Reset describe the quota. Reset is a Unix time in seconds. Retry-After is how many seconds the app asks you to wait after a rejection. Mode appears on a degraded allow. Absent means that response did not include the header. The page does not fill one in.",
+        ],
+      },
+      {
+        heading: "Who the quota belongs to",
+        paragraphs: [
+          "You are the person using the page. The web server is what sends the 10 requests. The app counts the web server’s address, so people using the same page share one quota. The page does not give each visitor a separate limit, and it does not list visitors or clear the count.",
+          "A development setting can let other tools send a test client name. This demonstration does not send that name. In production that setting stays off.",
+          "A count kept in memory belongs to this one app process. A count kept in Redis is shared by app processes that use the same Redis settings. If Redis fails, fail-closed answers 503 and does not invent a remaining count. Fail-open answers 200 with the degraded mode and also does not invent that count.",
+        ],
+      },
+      {
+        heading: "Other pages and heavier local runs",
+        paragraphs: [
+          "Algorithm Lab and Adaptive Explorer show results that were saved with this project. They do not choose the limit used by live requests. The adaptive example does not handle this app’s traffic.",
+          "For a larger local run, use the terminal at the project root: npm run load:http, npm run load:compare, npm run load:core, npm run load:redis-compare, or npm run load:adaptive. The page does not run those commands.",
         ],
       },
     ],
