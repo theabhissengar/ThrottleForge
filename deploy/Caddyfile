@@ -1,0 +1,5 @@
+# Site address comes from the environment. Use :80 for plain HTTP.
+# A hostname you control enables Caddy's automatic HTTPS.
+{$THROTTLEFORGE_SITE_ADDRESS} {
+	reverse_proxy web:3001
+}

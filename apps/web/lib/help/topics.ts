@@ -66,7 +66,8 @@ export const HELP_TOPICS: HelpTopic[] = [
       {
         heading: "Run a small demonstration",
         paragraphs: [
-          "The Request demonstration section sends 10 real requests to this copy of the app. Press Run demonstration. The table lists each response after the batch finishes. You can run it again after the server cooldown, which is 30 seconds on one web server process. That cooldown is not shared across every copy of the web server, and it is not a general rate limit.",
+          "A production deployment leaves the live probe off. That page does not show Run demonstration. It shows an example table for the configured limit. Those rows were not sent to the app. They are not quota decisions, and they are not the live counters.",
+          "On a local development server, the Request demonstration section sends 10 real requests to this copy of the app. Press Run demonstration. The table lists each response after the batch finishes. You can run it again after the server cooldown, which is 30 seconds on one web server process. That cooldown is not shared across every copy of the web server, and it is not a general rate limit.",
           "Demo cooldown active means the web server refused to start another batch yet. It shows how many seconds to wait. That message is not one of the ten results, and it is not the app rejecting a request for using up its quota.",
         ],
       },

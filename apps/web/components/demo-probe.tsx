@@ -4,12 +4,55 @@ import { useEffect, useRef, useState } from "react";
 import { useLive } from "@/components/live-provider";
 import { Callout, DataTable, Panel } from "@/components/ui";
 import { headerCell, type ProbeSummary } from "@/lib/demo/classify";
+import { exampleFixedWindowRows } from "@/lib/demo/example";
 import type { PolicyRead } from "@/lib/demo/policy";
 import { presentProbeHttp, scrapeFollowUp, scrapeNote, type ProbePresentation } from "@/lib/demo/present";
 
 type PolicyView = PolicyRead | { state: "loading" };
 
-export function DemoProbe({ policy }: { policy: PolicyView }) {
+export function DemoProbe({ policy, liveProbe }: { policy: PolicyView; liveProbe: boolean }) {
+  if (!liveProbe) return <ExampleDemonstration policy={policy} />;
+  return <LiveDemonstration policy={policy} />;
+}
+
+function ExampleDemonstration({ policy }: { policy: PolicyView }) {
+  const rows = policy.state === "ok" ? exampleFixedWindowRows(policy.policy.limit) : null;
+  return (
+    <>
+      <Panel title="Request demonstration" about="overview" aboutLabel="About this demonstration">
+        <p className="type-body text-ink-dim">
+          This deployment does not send live demonstration requests. Nothing in this section calls the API. The counters on this page stay unchanged.
+        </p>
+      </Panel>
+      <Panel title="Example fixed-window outcomes" about="overview" aboutLabel="About this example">
+        <p className="type-body text-ink-dim">
+          This table is an illustration of the configured limit. These rows were not sent to the API. They are not quota decisions, and they are not in the Prometheus counters or the charts.
+        </p>
+        {policy.state === "loading" ? <p className="type-body mt-4">Waiting for the policy reading.</p> : null}
+        {policy.state === "unavailable" ? (
+          <p className="type-body mt-4">The example needs the policy reading. No example rows are shown.</p>
+        ) : null}
+        {rows ? (
+          <div className="mt-4">
+            <DataTable
+              caption="Example rows for this limit. These rows were not sent, and they are not live metrics."
+              columns={["Example", "Status", "Limit", "Remaining", "Meaning"]}
+              rows={rows.map((row) => [
+                String(row.sequence),
+                row.statusLabel,
+                row.limit,
+                row.remaining,
+                row.meaning,
+              ])}
+            />
+          </div>
+        ) : null}
+      </Panel>
+    </>
+  );
+}
+
+function LiveDemonstration({ policy }: { policy: PolicyView }) {
   const live = useLive();
   const lastSuccess = useRef(live.lastSuccessAt);
   useEffect(() => {

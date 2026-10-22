@@ -49,7 +49,7 @@ npm install
 npm run start:dev
 ```
 
-Root scripts proxy to `@throttleforge/api`. Default listen address: `http://localhost:3000`
+Root scripts proxy to `@throttleforge/api`. The process binds `0.0.0.0`. Local URL: `http://127.0.0.1:3000`
 
 The dashboard is a second process on port **3001**. It does not replace `npm run start:dev`.
 
@@ -141,6 +141,8 @@ An upstream `429` is a row in the batch with outcome `rate_limited`. A `429` fro
 | `production` | unset, `disabled`, or any other value | off |
 
 `THROTTLEFORGE_DEMO_PROBE=disabled` turns the probe off in every environment. In production, only the exact value `enabled` turns it on. Any other value leaves it off.
+
+The production Compose stack leaves the probe unset. Overview does not offer Run demonstration. It shows a separate example of the configured limit: one example allow for each unit of that limit, then one example rejection. The page says those rows were not sent. Local development still sends the real batch of 10.
 
 Local development accepts the probe only when the incoming request URL is `http` or `https` on `localhost`, `127.0.0.1`, or `::1`, and the `Origin` header is that exact origin. `http://127.0.0.1:3001` and `http://localhost:3001` are different origins. Production, and any deployment behind a proxy, must set `THROTTLEFORGE_CANONICAL_ORIGIN` to the browser-visible origin, for example `https://demo.example.com`. The value must be exactly that origin, with no user, path, query, or hash. `Origin`, `Host`, `X-Forwarded-Host`, and `X-Forwarded-Proto` are not used to decide which origin is trusted. An invalid canonical origin, a missing `Origin`, or a mismatch rejects the probe and does not call the API.
 
@@ -284,6 +286,65 @@ Start a second process with `PORT=3001` and the same Redis settings.
 5. ~~Metrics / observability (`GET /metrics`)~~  
 5b. ~~Next.js `apps/web` dashboard (HTTP client to the API)~~ Read-only local dashboard. Live view is process-local Prometheus. Algorithm and adaptive pages use committed transcripts plus optional JSON import. No database and no live adaptive control.  
 6. ~~Adaptive global-budget experiment~~ The in-memory comparison passed. It is not mounted on HTTP or Redis, because the API has no congestion signal.  
+
+## Local production stack
+
+Docker Compose runs the same apps as the quick start, with production settings and a private network. Install Docker, then from the repository root:
+
+```bash
+docker compose up --build
+```
+
+Open `http://127.0.0.1:3001`. That publish is loopback only. The API is `http://api:3000` on the Compose network and is not mapped to a host port. Redis is not started. The web service sets `THROTTLEFORGE_API_ORIGIN=http://api:3000` and `NODE_ENV=production`, so `POST /api/demo-probe` stays off. Overview then shows an example table for the configured limit. Those rows were not sent, are not quota decisions, and are not the live counters. `GET /health` on the API means the process answered. It does not check Redis.
+
+Stop the stack with `docker compose down`.
+
+Shared fixed-window quotas use the Redis profile. The Redis port is not published. `RATE_LIMIT_ON_REDIS_ERROR` stays `closed` unless you override it. The client does not reconnect after that connection closes, so start the API container again once Redis is back.
+
+```powershell
+$env:RATE_LIMIT_STORE = "redis"
+$env:REDIS_URL = "redis://redis:6379"
+docker compose --profile redis up --build
+```
+
+Caddy is a second profile. It proxies only to the web service. Set `THROTTLEFORGE_SITE_ADDRESS` to a hostname you control before using it for a public site. The default `:80` serves HTTP and does not request a certificate. Normal HTTPS needs that hostname pointed at the host. This repository does not create a cloud account or DNS records.
+
+```powershell
+$env:THROTTLEFORGE_SITE_ADDRESS = "demo.example.com"
+docker compose --profile proxy up --build
+```
+
+### Production environment
+
+Set these on the process. Compose already sets the values in the left-hand column for `api` and `web`.
+
+| Variable | Production Compose | Meaning |
+|----------|--------------------|---------|
+| `NODE_ENV` | `production` | Disables the test client header. Leaves the request probe off unless `THROTTLEFORGE_DEMO_PROBE` is exactly `enabled` |
+| `PORT` | API `3000`, web `3001` | Listen port inside the container |
+| `RATE_LIMIT_STORE` | `memory` | `redis` only when you opt into the Redis profile |
+| `REDIS_URL` | unset | Required only when the store is `redis`, for example `redis://redis:6379` |
+| `RATE_LIMIT_ON_REDIS_ERROR` | `closed` | Unchanged fail-closed default. `open` is the existing fail-open path |
+| `THROTTLEFORGE_API_ORIGIN` | `http://api:3000` | Server-side origin. The browser does not choose it |
+| `THROTTLEFORGE_DEMO_PROBE` | unset | Production probe stays off |
+| `THROTTLEFORGE_CANONICAL_ORIGIN` | unset | Required only if the probe is explicitly enabled |
+| `THROTTLEFORGE_SITE_ADDRESS` | unset until the proxy profile | Caddy site address, such as a hostname or `:80` |
+
+`ALLOW_TEST_CLIENT_ID` stays unset. `X-Forwarded-For` is not trusted. Do not commit `.env` files.
+
+### Intended public host
+
+The zero-budget target is one Oracle Cloud Always Free Ampere A1 VM in the home region, about 1 OCPU and 4 GB, with Docker Compose built on that Arm machine. Keep the VM inside the Always Free allowance: 2 OCPUs, 12 GB memory, about 200 GB of combined boot and block storage, and 10 TB of outbound data per month. A payment method is used to verify the account. Usage outside that allowance is billed. A1 capacity can be unavailable. Oracle may reclaim an idle Always Free VM after 7 quiet days. A domain you control is required for a normal HTTPS certificate. Patch the OS and rebuild the images yourself. If that VM is not available, the local Compose command above is the deployment.
+
+`/metrics` stays on the API network. This Compose file does not publish it. `GET /health` remains a process check.
+
+### Troubleshooting
+
+- Dashboard health says unreachable: the API container is stopped or still starting, or `THROTTLEFORGE_API_ORIGIN` is not the API the web process can reach.
+- `POST /api/demo-probe` returns `probe_disabled`: expected while the production probe is unset.
+- Host connections to port 3000 or 6379 fail: expected. Those ports are not published.
+- A Redis profile with Redis stopped: `GET /health` can still be `ok`, and `GET /api/demo` returns 503 `Rate limit store unavailable` with no quota headers.
+- In-memory quotas belong to one API process. Redis shares the fixed-window quota across API processes that use the same URL, prefix, limit, and window. Sliding window, token bucket, and the adaptive controller stay off this HTTP path.
 
 ## License
 

@@ -8,7 +8,7 @@ import { Callout, DataTable, MetricSummary, PageHeader, Panel, presenceNote, Ske
 import { readPolicyPayload, redisFailureLabel, type PolicyRead } from "@/lib/demo/policy";
 import { formatCount, formatSeconds } from "@/lib/metrics/format";
 
-export function OverviewDashboard() {
+export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
   const live = useLive();
   const policy = usePolicy();
   const snapshot = live.snapshot;
@@ -51,7 +51,7 @@ export function OverviewDashboard() {
           <Fact term="Redis failure mode" value={policyFact(policy, redisFailureLabel)} unavailable={policy.state !== "ok"} />
         </dl>
       </Panel>
-      <DemoProbe policy={policy} />
+      <DemoProbe policy={policy} liveProbe={liveProbe} />
       {!live.attempted ? (
         <div className="grid gap-4 md:grid-cols-2">
           <SkeletonBlock label="Loading allowed decisions" kind="metric" />

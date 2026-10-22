@@ -30,9 +30,10 @@ async function bootstrap(): Promise<void> {
   loadLocalEnv();
   // trust proxy left disabled: do not honor X-Forwarded-For by default.
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   const port = Number.parseInt(process.env.PORT ?? '3000', 10);
-  await app.listen(port);
-  console.log(`ThrottleForge listening on http://localhost:${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`ThrottleForge listening on http://0.0.0.0:${port}`);
 }
 
 bootstrap();

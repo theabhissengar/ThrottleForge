@@ -66,6 +66,7 @@ Nest HTTP continues to use fixed-window only in M3 (no algorithm selection DI).
 | M5 | Metrics / observability |
 | M5b / M7 | Next.js `apps/web` dashboard over HTTP. Read-only. No database. Adaptive control stays off the HTTP path |
 | M6 | Adaptive global-budget experiment. The pre-registered comparison passed. The controller is not mounted on HTTP or Redis |
+| M8 | Deployment packaging. Docker Compose runs Next.js and the Nest API on a private network, memory store by default, Redis and Caddy as profiles. The public probe stays off. Production Overview shows a labelled example of the configured limit instead of sending requests. See the README deployment section |
 
 ## Explicit non-goals (early milestones)
 
