@@ -61,6 +61,31 @@ describe('scrapeApi', () => {
     expect(payload.metrics.state).toBe('ok')
     expect(payload.metrics.snapshot?.allowed.presence).toBe('absent')
   })
+
+  it('does not treat an aborted upstream as healthy', async () => {
+    const fetchImpl: typeof fetch = async () => {
+      throw new Error('The operation was aborted due to timeout')
+    }
+    const payload = await scrapeApi('http://127.0.0.1:3000', 'http://127.0.0.1:3001/api/live', fetchImpl)
+    expect(payload.health).toEqual({
+      state: 'unreachable',
+      error: 'The operation was aborted due to timeout',
+    })
+    expect(payload.metrics.state).toBe('error')
+    expect(payload.metrics).not.toHaveProperty('snapshot')
+  })
+
+  it('does not treat an HTML 200 as health or metrics', async () => {
+    const html = '<!DOCTYPE html><html><body>Waking service</body></html>'
+    const fetchImpl: typeof fetch = async () => new Response(html, { status: 200 })
+    const payload = await scrapeApi('http://127.0.0.1:3000', 'http://127.0.0.1:3001/api/live', fetchImpl)
+    expect(payload.health).toEqual({
+      state: 'unreachable',
+      error: 'Health response was not JSON',
+    })
+    expect(payload.metrics.state).toBe('error')
+    expect(payload.metrics).not.toHaveProperty('snapshot')
+  })
 })
 
 describe('readCapped', () => {

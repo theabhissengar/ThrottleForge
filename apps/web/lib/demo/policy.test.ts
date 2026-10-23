@@ -25,6 +25,9 @@ describe('parsePolicy', () => {
     expect(parsePolicy({ ...snapshot, algorithm: 'sliding_window' })).toEqual({ state: 'unavailable' })
     expect(parsePolicy({ ...snapshot, limit: 5.5 })).toEqual({ state: 'unavailable' })
     expect(parsePolicyText('not-json')).toEqual({ state: 'unavailable' })
+    expect(parsePolicyText('<!DOCTYPE html><html><body>Waking service</body></html>')).toEqual({
+      state: 'unavailable',
+    })
     expect(readPolicyPayload({ state: 'ok' })).toEqual({ state: 'unavailable' })
     expect(readPolicyPayload({ state: 'unavailable' })).toEqual({ state: 'unavailable' })
   })

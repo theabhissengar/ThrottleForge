@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: throttleforge-api
+    runtime: node
+    plan: free
+    autoDeployTrigger: off
+    buildCommand: npm ci && npm run build -w @throttleforge/api
+    startCommand: npm run start:prod -w @throttleforge/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: RATE_LIMIT_STORE
+        value: memory
+      - key: RATE_LIMIT
+        value: "5"
+      - key: RATE_WINDOW_MS
+        value: "60000"

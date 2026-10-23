@@ -307,10 +307,10 @@ $env:REDIS_URL = "redis://redis:6379"
 docker compose --profile redis up --build
 ```
 
-Caddy is a second profile. It proxies only to the web service. Set `THROTTLEFORGE_SITE_ADDRESS` to a hostname you control before using it for a public site. The default `:80` serves HTTP and does not request a certificate. Normal HTTPS needs that hostname pointed at the host. This repository does not create a cloud account or DNS records.
+Caddy is an optional local profile. It proxies only to the web service on this machine. It is not the public deployment. The default site address `:80` serves HTTP. Set `THROTTLEFORGE_SITE_ADDRESS` only when you want that local proxy to use another address.
 
 ```powershell
-$env:THROTTLEFORGE_SITE_ADDRESS = "demo.example.com"
+$env:THROTTLEFORGE_SITE_ADDRESS = ":80"
 docker compose --profile proxy up --build
 ```
 
@@ -332,15 +332,31 @@ Set these on the process. Compose already sets the values in the left-hand colum
 
 `ALLOW_TEST_CLIENT_ID` stays unset. `X-Forwarded-For` is not trusted. Do not commit `.env` files.
 
-### Intended public host
+### Public host
 
-The zero-budget target is one Oracle Cloud Always Free Ampere A1 VM in the home region, about 1 OCPU and 4 GB, with Docker Compose built on that Arm machine. Keep the VM inside the Always Free allowance: 2 OCPUs, 12 GB memory, about 200 GB of combined boot and block storage, and 10 TB of outbound data per month. A payment method is used to verify the account. Usage outside that allowance is billed. A1 capacity can be unavailable. Oracle may reclaim an idle Always Free VM after 7 quiet days. A domain you control is required for a normal HTTPS certificate. Patch the OS and rebuild the images yourself. If that VM is not available, the local Compose command above is the deployment.
+The public dashboard is a Vercel project for `apps/web`. The public API is one Render free web service built from the repository root. Redis stays off. The production probe stays unset, so Overview keeps the labelled example and does not send live demonstration requests.
 
-`/metrics` stays on the API network. This Compose file does not publish it. `GET /health` remains a process check.
+Vercel project settings:
+
+- Root Directory: `apps/web`
+- Include source files outside the Root Directory: enabled
+- Node.js: 22.x
+- Install command: `npm ci --prefix ../.. --workspace=@throttleforge/web`
+- Build command and Output Directory: leave the Next.js defaults. Do not set the output directory to `.next/standalone`.
+
+Set `THROTTLEFORGE_API_ORIGIN` on Vercel to the Render origin only, for example `https://<render-service>.onrender.com`, with no path. Do not create a `NEXT_PUBLIC_` copy. Do not set `THROTTLEFORGE_DEMO_PROBE` or `THROTTLEFORGE_CANONICAL_ORIGIN`.
+
+Render uses [render.yaml](render.yaml). The service root is the repository root. Build with `npm ci && npm run build -w @throttleforge/api`. Start with `npm run start:prod -w @throttleforge/api`. `NODE_VERSION` is 22. The health check path is `/health`. The store is `memory`. Do not set `PORT`, `REDIS_URL`, or `ALLOW_TEST_CLIENT_ID`. Render injects `PORT`, and the API binds `0.0.0.0`. Automatic deploys stay off until a deploy is approved. This repository does not create the Vercel project or sync that Blueprint.
+
+A free Render web service is public at its `onrender.com` URL. Hiding the origin from the browser is not access control. `GET /metrics` stays unauthenticated there. Its labels are `store`, `algorithm`, and `result` only. `GET /api/demo` is public and rate limited. The API does not trust `X-Forwarded-For`, so callers share the proxy connection's in-memory quota. That quota and the process-local metrics disappear when the free instance spins down.
+
+The free instance sleeps after 15 minutes without inbound HTTP or WebSocket traffic and takes about one minute to wake. The dashboard still gives the upstream 2 seconds. A timeout or an HTML loading page is reported as health unreachable and policy unavailable. The page does not invent a healthy status or metric samples. A later scrape, after the process is awake, can show an empty process.
+
+`/metrics` stays on the private network in local Compose. `GET /health` remains a process check in both places. It does not check Redis.
 
 ### Troubleshooting
 
-- Dashboard health says unreachable: the API container is stopped or still starting, or `THROTTLEFORGE_API_ORIGIN` is not the API the web process can reach.
+- Dashboard health says unreachable: the API is stopped, still starting, or asleep, or `THROTTLEFORGE_API_ORIGIN` is not the API the web process can reach. An asleep Render service is unreachable until it answers JSON.
 - `POST /api/demo-probe` returns `probe_disabled`: expected while the production probe is unset.
 - Host connections to port 3000 or 6379 fail: expected. Those ports are not published.
 - A Redis profile with Redis stopped: `GET /health` can still be `ok`, and `GET /api/demo` returns 503 `Rate limit store unavailable` with no quota headers.
