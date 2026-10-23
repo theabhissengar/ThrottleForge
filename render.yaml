@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     autoDeployTrigger: off
-    buildCommand: npm ci && npm run build -w @throttleforge/api
+    buildCommand: npm ci --include=dev && npm run build -w @throttleforge/api && npm prune --omit=dev
     startCommand: npm run start:prod -w @throttleforge/api
     healthCheckPath: /health
     envVars:
