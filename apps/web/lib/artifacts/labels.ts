@@ -13,12 +13,9 @@ export const DOCUMENTED_REGRET = {
   'capacity-change': { adaptive: 102, 'static-floor': 132, 'static-ceiling': 48, 'static-oracle': 48 },
 } as const
 
-export type MeanRunner = keyof typeof DOCUMENTED_MEANS
-
-export function formatMean(runner: string, value: number): string {
-  const documented = DOCUMENTED_MEANS[runner as MeanRunner]
-  if (documented !== undefined && Number(documented) === value) return documented
-  return String(value)
+/** Four decimal places for display. The numeric mean is left unchanged. */
+export function formatMean(value: number): string {
+  return value.toFixed(4)
 }
 
 export const SCENARIO_INTENTS: Record<string, string> = {

@@ -51,7 +51,7 @@ export function AdaptiveExplorer({
           {MEAN_RUNNERS.map((runner) => (
             <article key={runner} className="stat-tile">
               <h3 className="type-secondary text-ink-dim">{runnerLabel(runner)}</h3>
-              <p className="type-figure mt-2">{formatMean(runner, report.correctness.means[runner])}</p>
+              <p className="type-figure mt-2">{formatMean(report.correctness.means[runner])}</p>
             </article>
           ))}
         </div>
