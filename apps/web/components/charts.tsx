@@ -7,13 +7,13 @@ import {
   CartesianGrid,
   Cell,
   Legend,
-  Line,
-  LineChart,
+  Rectangle,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { outcomeMark } from "@/lib/metrics/chart-marks";
 import { outcomeYDomain, type OutcomePoint } from "@/lib/metrics/deltas";
 
 type Palette = {
@@ -188,21 +188,40 @@ function OutcomeTooltip({
   );
 }
 
+function OutcomeBar(props: {
+  dataKey?: string | number;
+  payload?: OutcomeChartPoint;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+}) {
+  const key = props.dataKey === "rejected" ? "rejected" : "allowed";
+  const value = props.payload?.[key] ?? null;
+  const mark = outcomeMark(value);
+  if (mark === "gap" || props.x == null || props.y == null || props.width == null) return null;
+  if (mark === "zero") {
+    return <Rectangle x={props.x} y={props.y - 2} width={props.width} height={2} fill={props.fill} />;
+  }
+  return <Rectangle x={props.x} y={props.y} width={props.width} height={props.height} fill={props.fill} radius={[3, 3, 0, 0]} />;
+}
+
 export function OutcomeTrendChart({ points }: { points: OutcomeChartPoint[] }) {
   const palette = useChartPalette();
   if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
   return (
-    <div className="chart-frame" role="img" aria-label="Allowed and rejected decisions in each scrape interval. The vertical axis is a count of decisions and starts at zero. Allowed is a solid line. Rejected is dashed. An unavailable series is omitted from the line.">
+    <div className="chart-frame" role="img" aria-label="Allowed and rejected decisions in each scrape interval. The vertical axis is a count of decisions and starts at zero. Allowed is green. Rejected is red. A missing series has no bar. A reported zero is a short mark on the baseline.">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+        <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 8 }} barGap={2} barCategoryGap="28%">
           <CartesianGrid stroke={palette.grid} vertical={false} />
           <XAxis dataKey="label" tick={{ fill: palette.muted, fontSize: 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} minTickGap={24} />
           <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={outcomeYDomain(points)} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
-          <Tooltip content={(props) => <OutcomeTooltip active={props.active} payload={props.payload as ReadonlyArray<{ payload?: OutcomeChartPoint }>} palette={palette} />} />
+          <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <OutcomeTooltip active={props.active} payload={props.payload as ReadonlyArray<{ payload?: OutcomeChartPoint }>} palette={palette} />} />
           <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
-          <Line type="monotone" dataKey="allowed" name="Allowed" stroke={palette.allow} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
-          <Line type="monotone" dataKey="rejected" name="Rejected" stroke={palette.reject} strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls={false} isAnimationActive={false} />
-        </LineChart>
+          <Bar dataKey="allowed" name="Allowed" fill={palette.allow} maxBarSize={18} isAnimationActive={false} shape={(props) => <OutcomeBar {...props} />} />
+          <Bar dataKey="rejected" name="Rejected" fill={palette.reject} maxBarSize={18} isAnimationActive={false} shape={(props) => <OutcomeBar {...props} />} />
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
@@ -224,7 +243,7 @@ export function BucketChart({
           <CartesianGrid stroke={palette.grid} vertical={false} />
           <XAxis dataKey="label" tick={{ fill: palette.muted, fontSize: 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} minTickGap={narrow ? 28 : 16} angle={narrow ? 0 : -35} height={narrow ? 32 : 70} textAnchor={narrow ? "middle" : "end"} />
           <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
-          <Tooltip content={(props) => <UnitTooltip {...props} unit="observations" />} />
+          <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <UnitTooltip {...props} unit="observations" />} />
           <Bar dataKey="cumulative" name="Cumulative observations" fill={palette.accent} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
         </BarChart>
       </ResponsiveContainer>
@@ -248,7 +267,7 @@ export function CompareBarChart({
           <CartesianGrid stroke={palette.grid} vertical={false} />
           <XAxis dataKey="name" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} interval={0} tickFormatter={(value) => categoryTick(value, compact)} />
           <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
-          <Tooltip content={(props) => <UnitTooltip {...props} unit="requests" />} />
+          <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <UnitTooltip {...props} unit="requests" />} />
           <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
           <Bar dataKey="allowed" name="Allowed" fill={palette.allow} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
           <Bar dataKey="rejected" name="Rejected" fill={palette.reject} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
@@ -274,7 +293,7 @@ export function RegretChart({
           <CartesianGrid stroke={palette.grid} vertical={false} />
           <XAxis dataKey="name" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} interval={0} tickFormatter={(value) => categoryTick(value, compact)} />
           <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
-          <Tooltip content={(props) => <UnitTooltip {...props} unit="regret" />} />
+          <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <UnitTooltip {...props} unit="regret" />} />
           <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
           <Bar dataKey="regret" name="Regret" maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion}>
             {points.map((point) => (
@@ -305,7 +324,7 @@ export function WindowChart({
           <CartesianGrid stroke={palette.grid} vertical={false} />
           <XAxis dataKey="window" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} minTickGap={compact ? 16 : 8} />
           <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
-          <Tooltip content={(props) => <UnitTooltip {...props} unit="count" />} />
+          <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <UnitTooltip {...props} unit="count" />} />
           <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
           {series.map((item) => (
             <Bar key={item.key} dataKey={item.key} name={item.name} fill={colorFromToken(palette, item.fill)} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />

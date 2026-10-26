@@ -29,10 +29,10 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
         </Callout>
       ) : null}
       <Panel title="Availability" titleClass="type-section">
-        <div className="grid gap-4">
+        <div className="availability-grid">
           <div>
             <h3 className="type-secondary text-ink-dim">Observed</h3>
-            <dl className="mt-3 grid gap-4 sm:grid-cols-2">
+            <dl className="availability-facts">
               <Fact
                 term="Health"
                 value={
@@ -58,9 +58,9 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
               />
             </dl>
           </div>
-          <div className="border-t border-line pt-4">
+          <div className="availability-policy">
             <h3 className="type-secondary text-ink-dim">Policy</h3>
-            <dl className="mt-3 grid gap-4 sm:grid-cols-2">
+            <dl className="availability-facts">
               <Fact term="Configured store" value={policyFact(policy, (item) => item.store)} unavailable={policy.state !== "ok"} mono={policy.state === "ok"} />
               <Fact term="Limit" value={policyFact(policy, (item) => String(item.limit))} unavailable={policy.state !== "ok"} mono={policy.state === "ok"} />
               <Fact term="Window" value={policyFact(policy, (item) => `${item.windowMs} ms`)} unavailable={policy.state !== "ok"} mono={policy.state === "ok"} />
@@ -128,13 +128,14 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
                 />
               </section>
               </div>
-              <Panel title="Request outcomes" titleClass="type-section">
+              <div className="overview-band">
+              <Panel className="overview-outcomes" title="Request outcomes" titleClass="type-section">
                 <p className="type-body mb-4 text-ink-dim">
                   Y axis: decisions in the interval between scrapes. Counts start at zero. This series exists only in this browser session.
                 </p>
                 <OutcomePanel trend={live.trend} delta={live.delta} allowed={snapshot.allowed.presence} rejected={snapshot.rejected.presence} />
               </Panel>
-              <Panel title="Limiter operation time" titleClass="type-section">
+              <Panel className="overview-histogram" title="Limiter operation time" titleClass="type-section">
                 <p className="type-body text-ink-dim">
                   Seconds inside one limiter consume. This is not handler latency, queue time, or end-to-end response time.
                 </p>
@@ -173,10 +174,11 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
                   </div>
                 )}
               </Panel>
-              <Panel title="Recent scrapes" titleClass="type-section">
+              <Panel className="overview-scrapes" title="Recent scrapes" titleClass="type-section">
                 <DataTable
+                  stack
                   caption="This browser session. An em dash means this scrape has no interval yet. Unavailable means that series was missing or the scrape failed."
-                  columns={["Scrape time", "Allowed delta", "Rejected delta", "Failures delta", "Degraded delta", "Result"]}
+                  columns={["Time", "Allowed", "Rejected", "Failures", "Degraded", "Result"]}
                   monoColumns={[0]}
                   rows={live.recent.map((row) => [
                     scrapeClock(row.at),
@@ -188,6 +190,7 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
                   ])}
                 />
               </Panel>
+              </div>
             </>
           ) : (
             <div className="empty-state" role="alert">

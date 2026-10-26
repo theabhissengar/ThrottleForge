@@ -78,23 +78,37 @@ export function ThemeMenu({ choice, onChange }: { choice: ThemeChoice; onChange:
           if (event.key === "Tab") trapTab(event, popoverRef.current);
         }}
       >
-        <div role="radiogroup" aria-label="Theme" className="grid gap-1" onKeyDown={(event) => moveRadio(event, choice, onChange)}>
-          {CHOICES.map((option) => (
-            <label key={option.id} className="theme-option type-control">
-              <input
-                className="sr-only"
-                type="radio"
-                name="theme-header"
-                value={option.id}
-                checked={choice === option.id}
-                onChange={() => select(option.id)}
-              />
-              <ThemeIcon choice={option.id} />
-              {option.label}
-            </label>
-          ))}
-        </div>
+        <ThemeOptions choice={choice} name="theme-header" onChange={select} />
       </div>
+    </div>
+  );
+}
+
+export function ThemeOptions({
+  choice,
+  onChange,
+  name,
+}: {
+  choice: ThemeChoice;
+  onChange: (choice: ThemeChoice) => void;
+  name: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label="Appearance" className="theme-options" onKeyDown={(event) => moveRadio(event, choice, onChange)}>
+      {CHOICES.map((option) => (
+        <label key={option.id} className="theme-option type-control">
+          <input
+            className="sr-only"
+            type="radio"
+            name={name}
+            value={option.id}
+            checked={choice === option.id}
+            onChange={() => onChange(option.id)}
+          />
+          <ThemeIcon choice={option.id} />
+          {option.label}
+        </label>
+      ))}
     </div>
   );
 }

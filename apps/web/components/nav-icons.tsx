@@ -78,6 +78,14 @@ export function MonitorIcon() {
   );
 }
 
+export function CloseIcon() {
+  return (
+    <svg width={18} height={18} {...shared}>
+      <path d="M5 5 L15 15 M15 5 L5 15" />
+    </svg>
+  );
+}
+
 export function LearnIcon() {
   return (
     <svg width={20} height={20} {...shared}>

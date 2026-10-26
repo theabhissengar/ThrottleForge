@@ -35,6 +35,7 @@ function ExampleDemonstration({ policy }: { policy: PolicyView }) {
         {rows ? (
           <div className="mt-4 max-h-80 overflow-y-auto">
             <DataTable
+              stack
               caption="Configured limit."
               columns={["Example", "Status", "Limit", "Remaining", "Meaning"]}
               rows={rows.map((row) => [String(row.sequence), row.statusLabel, row.limit, row.remaining, row.meaning])}
@@ -82,17 +83,21 @@ function LiveDemonstration({ policy }: { policy: PolicyView }) {
   return (
     <Panel title="Request demonstration" titleClass="type-section">
       <div aria-busy={running}>
-        <p className="type-body text-ink-dim">
-          You are using this page. This web server sends 10 requests to GET /api/demo on this ThrottleForge instance. The API counts the web server&apos;s address, not you, so visitors share one quota. This page does not give each visitor a separate limit.
-        </p>
-        {policy.state === "ok" && policy.policy.testClientOverrideEnabled ? (
-          <p className="type-body mt-2 text-ink-dim">
-            The API is configured to accept a development test client header from other callers. This demonstration does not send that header.
-          </p>
-        ) : null}
-        <button type="button" className="btn btn-primary mt-4" onClick={() => void run()} disabled={running}>
-          {running ? "Sending 10 requests" : "Run demonstration"}
-        </button>
+        <div className="demo-lead">
+          <div>
+            <p className="type-body text-ink-dim">
+              You are using this page. This web server sends 10 requests to GET /api/demo on this ThrottleForge instance. The API counts the web server&apos;s address, not you, so visitors share one quota. This page does not give each visitor a separate limit.
+            </p>
+            {policy.state === "ok" && policy.policy.testClientOverrideEnabled ? (
+              <p className="type-body mt-2 text-ink-dim">
+                The API is configured to accept a development test client header from other callers. This demonstration does not send that header.
+              </p>
+            ) : null}
+          </div>
+          <button type="button" className="btn btn-primary" onClick={() => void run()} disabled={running}>
+            {running ? "Sending 10 requests" : "Run demonstration"}
+          </button>
+        </div>
         {running ? <p className="type-secondary mt-3 text-ink-dim">Sending 10 requests to this instance.</p> : null}
         {presentation?.kind === "message" ? <p className="type-body mt-4">{presentation.text}</p> : null}
         {presentation?.kind === "cooldown" ? (
@@ -107,6 +112,7 @@ function LiveDemonstration({ policy }: { policy: PolicyView }) {
             {presentation.envelope.error ? <p className="type-body">{stopText(presentation.envelope.error)}</p> : null}
             <p className="type-body">{summaryText(presentation.envelope.summary)}</p>
             <DataTable
+              stack
               caption="Responses returned by this demonstration. These rows are not the Prometheus counters."
               columns={["Request", "Status", "Limit", "Remaining", "Reset", "Retry-After", "Mode", "Result"]}
               rows={presentation.envelope.results.map((result) => [

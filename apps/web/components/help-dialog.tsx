@@ -30,7 +30,11 @@ export function HelpProvider({ children }: { children: ReactNode }) {
     setTopicId(next);
     dialogRef.current?.showModal();
     requestAnimationFrame(() => {
-      document.getElementById(`help-${next}`)?.scrollIntoView({ block: "start" });
+      const body = dialogRef.current?.querySelector<HTMLElement>(".help-dialog-body");
+      const node = document.getElementById(`help-${next}`);
+      if (!body || !node) return;
+      const top = node.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
+      body.scrollTop = Math.max(0, top);
     });
   }
 
@@ -53,7 +57,7 @@ export function HelpProvider({ children }: { children: ReactNode }) {
         }}
         onClose={() => openerRef.current?.focus()}
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="help-dialog-bar">
           <h2 id={titleId} className="type-section">
             {topic.title}
           </h2>
@@ -61,23 +65,25 @@ export function HelpProvider({ children }: { children: ReactNode }) {
             Close
           </button>
         </div>
-        <div className="grid gap-4">
-          {topic.sections.map((section) => (
-            <section key={section.heading} id={section.heading === topic.sections[0]?.heading ? `help-${topic.id}` : undefined}>
-              <h3 className="type-card">{section.heading}</h3>
-              {section.paragraphs.map((paragraph) => (
-                <p key={paragraph} className="type-body mt-2 text-ink-dim">
-                  {paragraph}
-                </p>
-              ))}
-            </section>
-          ))}
+        <div className="help-dialog-body">
+          <div className="grid gap-4">
+            {topic.sections.map((section) => (
+              <section key={section.heading} id={section.heading === topic.sections[0]?.heading ? `help-${topic.id}` : undefined}>
+                <h3 className="type-card">{section.heading}</h3>
+                {section.paragraphs.map((paragraph) => (
+                  <p key={paragraph} className="type-body mt-2 text-ink-dim">
+                    {paragraph}
+                  </p>
+                ))}
+              </section>
+            ))}
+          </div>
+          <p className="type-secondary mt-4">
+            <a className="text-link" href={`/docs#${topic.id}`}>
+              Open full page
+            </a>
+          </p>
         </div>
-        <p className="type-secondary mt-4">
-          <a className="text-link" href={`/docs#${topic.id}`}>
-            Open full page
-          </a>
-        </p>
       </dialog>
     </HelpContext.Provider>
   );

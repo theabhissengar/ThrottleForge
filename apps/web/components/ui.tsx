@@ -80,7 +80,7 @@ export function MetricSummary({
   const absent = presence === "absent";
   const rule = tone === "allow" ? "border-l-allow" : tone === "reject" ? "border-l-reject" : tone === "warning" ? "border-l-warning" : tone === "danger" ? "border-l-danger" : "border-l-line";
   return (
-    <article className={`card min-w-0 border-l-[3px] ${rule}`}>
+    <article className={`card metric-card min-w-0 ${rule}`}>
       <p className="type-secondary text-ink-dim">{label}</p>
       <p className="type-metric mt-2">
         {absent ? "No sample" : value}{" "}
@@ -132,21 +132,23 @@ export function DataTable({
   rows,
   cellClass,
   monoColumns,
+  stack,
 }: {
   caption: string;
   columns: string[];
   rows: string[][];
   cellClass?: (rowIndex: number, cellIndex: number) => string | undefined;
   monoColumns?: number[];
+  stack?: boolean;
 }) {
-  const stack = columns.length <= 4;
+  const stackNarrow = stack ?? columns.length <= 4;
   const wide = columns.length > 4;
   const numeric = columns.map((_, columnIndex) => columnIndex > 0 && rows.every((row) => isNumeric(row[columnIndex] ?? "")));
   return (
     <div>
-      {wide ? <p className="type-secondary mb-2 text-ink-dim md:sr-only">More columns</p> : null}
+      {wide && !stackNarrow ? <p className="type-secondary mb-2 text-ink-dim md:sr-only">More columns</p> : null}
       <div className={wide ? "table-scroll" : undefined}>
-        <table className={`data-table ${stack ? "stack-narrow" : ""}`}>
+        <table className={`data-table ${stackNarrow ? "stack-narrow" : ""}`}>
           <caption className="type-secondary mb-2 text-left text-ink-dim">{caption}</caption>
           <thead>
             <tr>
