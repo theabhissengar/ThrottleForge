@@ -7,14 +7,14 @@ import { requestLiveRefresh, useLive } from "@/components/live-provider";
 import { Callout, DataTable, MetricSummary, PageHeader, Panel, presenceNote, SkeletonBlock } from "@/components/ui";
 import { readPolicyPayload, redisFailureLabel, type PolicyRead } from "@/lib/demo/policy";
 import type { IntervalDelta } from "@/lib/metrics/deltas";
-import { decisionNotice, formatCount, formatSeconds } from "@/lib/metrics/format";
+import { decisionNoticeCopy, formatCount, formatSeconds } from "@/lib/metrics/format";
 import type { TrendPoint } from "@/components/live-provider";
 
 export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
   const live = useLive();
   const policy = usePolicy();
   const snapshot = live.snapshot;
-  const decisions = snapshot === null ? null : decisionNotice(snapshot.allowed, snapshot.rejected);
+  const decisions = snapshot === null ? null : decisionNoticeCopy(snapshot.allowed, snapshot.rejected);
 
   return (
     <div className="page-stack">
@@ -83,14 +83,7 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
         <>
           {snapshot ? (
             <>
-              {decisions === "reported-zero" ? (
-                <p className="empty-state type-body">No limiter decisions recorded in this process.</p>
-              ) : null}
-              {decisions === "absent" ? (
-                <p className="empty-state type-body">
-                  Allowed and rejected counters are absent from this scrape. This is not a reported zero.
-                </p>
-              ) : null}
+              {decisions ? <p className="empty-state type-body">{decisions}</p> : null}
               <div className="metric-frame">
               <section className="metric-grid" aria-label="Decision counters">
                 <MetricSummary

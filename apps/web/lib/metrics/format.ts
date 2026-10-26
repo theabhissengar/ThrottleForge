@@ -36,6 +36,21 @@ export function decisionNotice(
   return null
 }
 
+const REPORTED_ZERO_NOTICE = 'No limiter decisions recorded in this process.'
+const ABSENT_DECISION_NOTICE =
+  'Allowed and rejected counters are absent from this scrape. This is not a reported zero.'
+
+/** Copy rendered by Overview for the decisionNotice result. Null means no banner. */
+export function decisionNoticeCopy(
+  allowed: { presence: CountPresence; value: number },
+  rejected: { presence: CountPresence; value: number },
+): string | null {
+  const notice = decisionNotice(allowed, rejected)
+  if (notice === 'reported-zero') return REPORTED_ZERO_NOTICE
+  if (notice === 'absent') return ABSENT_DECISION_NOTICE
+  return null
+}
+
 export function formatAge(ageMs: number): string {
   const seconds = Math.max(0, Math.round(ageMs / 1000))
   if (seconds === 1) return '1 second ago'

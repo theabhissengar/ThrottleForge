@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decisionNotice, presenceNote } from './format'
+import { decisionNotice, decisionNoticeCopy, presenceNote } from './format'
 import {
   advanceSeries,
   applyReadings,
@@ -197,5 +197,84 @@ describe('decisionNotice', () => {
   it('confirms zero only when both decision counters are reported as zero', () => {
     expect(decisionNotice(reported(0), reported(0))).toBe('reported-zero')
     expect(decisionNotice(reported(1), reported(0))).toBeNull()
+  })
+})
+
+function counters(allowed: ReturnType<typeof reported> | typeof absent, rejected: ReturnType<typeof reported> | typeof absent) {
+  return { allowed, rejected, failures: absent, degraded: absent }
+}
+
+describe('overview counter states', () => {
+  it('shows the zero-decision notice when both counters explicitly report 0', () => {
+    const reading = counters(reported(0), reported(0))
+    expect(decisionNoticeCopy(reading.allowed, reading.rejected)).toBe('No limiter decisions recorded in this process.')
+    const applied = applyReadings(EMPTY_HELD, reading)
+    expect(applied.reset).toBe(false)
+    expect(applied.held).toEqual({ allowed: 0, rejected: 0, failures: null, degraded: null })
+    expect(applied.point).toBeNull()
+  })
+
+  it('shows the missing-counter notice, not the zero notice, when both counters are absent', () => {
+    const reading = counters(absent, absent)
+    const copy = decisionNoticeCopy(reading.allowed, reading.rejected)
+    expect(copy).toBe('Allowed and rejected counters are absent from this scrape. This is not a reported zero.')
+    expect(copy).not.toBe('No limiter decisions recorded in this process.')
+    const applied = applyReadings(EMPTY_HELD, reading)
+    expect(applied.reset).toBe(false)
+    expect(applied.held).toEqual(EMPTY_HELD)
+    expect(applied.point).toBeNull()
+  })
+
+  it('keeps a reported allowed value of 3 and does not turn an absent rejected counter into zero', () => {
+    const reading = counters(reported(3), absent)
+    expect(decisionNoticeCopy(reading.allowed, reading.rejected)).toBeNull()
+    expect(presenceNote(reading.allowed.presence, reading.allowed.value)).toBe('Cumulative counter')
+    expect(presenceNote(reading.rejected.presence, reading.rejected.value)).toBe('No sample in this scrape')
+    const applied = applyReadings(EMPTY_HELD, reading)
+    expect(applied.held.allowed).toBe(3)
+    expect(applied.held.rejected).toBeNull()
+    expect(applied.reset).toBe(false)
+    expect(applied.point).toBeNull()
+    const next = applyReadings(applied.held, reading)
+    expect(next.held.allowed).toBe(3)
+    expect(next.held.rejected).toBeNull()
+    expect(next.delta).toEqual({ allowed: 0, rejected: null, failures: null, degraded: null })
+    expect(next.point).toEqual({ allowed: 0, rejected: null })
+  })
+
+  it('produces an allowed interval delta of 3 when the reported cumulative moves from 0 to 3', () => {
+    const baseline = applyReadings(EMPTY_HELD, counters(reported(0), reported(0)))
+    const applied = applyReadings(baseline.held, counters(reported(3), reported(0)))
+    expect(applied.reset).toBe(false)
+    expect(applied.delta?.allowed).toBe(3)
+    expect(applied.delta?.rejected).toBe(0)
+    expect(applied.point).toEqual({ allowed: 3, rejected: 0 })
+    expect(applied.held.allowed).toBe(3)
+  })
+
+  it('does not treat a missing reading between reported samples as a reset or a reported zero', () => {
+    const baseline = applyReadings(EMPTY_HELD, counters(reported(4), reported(1)))
+    const gap = applyReadings(baseline.held, counters(absent, absent))
+    expect(gap.reset).toBe(false)
+    expect(gap.scrape).not.toBe('reset')
+    expect(gap.point).toBeNull()
+    expect(gap.held.allowed).toBe(4)
+    expect(gap.held.rejected).toBe(1)
+    expect(decisionNoticeCopy(absent, absent)).not.toBe('No limiter decisions recorded in this process.')
+    const resumed = applyReadings(gap.held, counters(reported(6), reported(1)))
+    expect(resumed.reset).toBe(false)
+    expect(resumed.delta?.allowed).toBe(2)
+    expect(resumed.held.allowed).toBe(6)
+  })
+
+  it('resets the segment when a reported cumulative counter decreases', () => {
+    const baseline = applyReadings(EMPTY_HELD, counters(reported(5), reported(2)))
+    const applied = applyReadings(baseline.held, counters(reported(1), reported(2)))
+    expect(applied.reset).toBe(true)
+    expect(applied.scrape).toBe('reset')
+    expect(applied.delta).toBeNull()
+    expect(applied.point).toBeNull()
+    expect(applied.held.allowed).toBe(1)
+    expect(applied.held.rejected).toBe(2)
   })
 })
