@@ -19,31 +19,26 @@ function ExampleDemonstration({ policy }: { policy: PolicyView }) {
   const rows = policy.state === "ok" ? exampleFixedWindowRows(policy.policy.limit) : null;
   return (
     <>
-      <Panel title="Request demonstration" about="overview" aboutLabel="About this demonstration">
+      <Panel title="Request demonstration" titleClass="type-section">
         <p className="type-body text-ink-dim">
           This deployment does not send live demonstration requests. Nothing in this section calls the API. The counters on this page stay unchanged.
         </p>
       </Panel>
-      <Panel title="Example fixed-window outcomes" about="overview" aboutLabel="About this example">
+      <Panel title="Example fixed-window outcomes" titleClass="type-section">
         <p className="type-body text-ink-dim">
-          This table is an illustration of the configured limit. These rows were not sent to the API. They are not quota decisions, and they are not in the Prometheus counters or the charts.
+          These rows illustrate the configured limit, were not sent, are not quota decisions, and are not in the counters or charts.
         </p>
         {policy.state === "loading" ? <p className="type-body mt-4">Waiting for the policy reading.</p> : null}
         {policy.state === "unavailable" ? (
           <p className="type-body mt-4">The example needs the policy reading. No example rows are shown.</p>
         ) : null}
         {rows ? (
-          <div className="mt-4">
+          <div className="mt-4 max-h-80 overflow-y-auto">
             <DataTable
-              caption="Example rows for this limit. These rows were not sent, and they are not live metrics."
+              caption="Configured limit."
               columns={["Example", "Status", "Limit", "Remaining", "Meaning"]}
-              rows={rows.map((row) => [
-                String(row.sequence),
-                row.statusLabel,
-                row.limit,
-                row.remaining,
-                row.meaning,
-              ])}
+              rows={rows.map((row) => [String(row.sequence), row.statusLabel, row.limit, row.remaining, row.meaning])}
+              cellClass={(rowIndex, cellIndex) => (cellIndex === 1 ? (rows[rowIndex]?.statusLabel === "Example 429" ? "text-reject" : "text-allow") : undefined)}
             />
           </div>
         ) : null}
@@ -85,7 +80,7 @@ function LiveDemonstration({ policy }: { policy: PolicyView }) {
   const followUp = remembered === undefined ? null : scrapeFollowUp(remembered, live.lastSuccessAt);
 
   return (
-    <Panel title="Request demonstration" about="overview" aboutLabel="About this demonstration">
+    <Panel title="Request demonstration" titleClass="type-section">
       <div aria-busy={running}>
         <p className="type-body text-ink-dim">
           You are using this page. This web server sends 10 requests to GET /api/demo on this ThrottleForge instance. The API counts the web server&apos;s address, not you, so visitors share one quota. This page does not give each visitor a separate limit.

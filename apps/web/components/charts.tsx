@@ -14,6 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { outcomeYDomain, type OutcomePoint } from "@/lib/metrics/deltas";
 
 type Palette = {
   allow: string;
@@ -116,9 +117,7 @@ function UnitTooltip({
               <span className="chart-swatch" style={{ background: String(item.color ?? "currentColor") }} />
               <span className="type-secondary">{String(item.name)}</span>
             </span>
-            <span>
-              {String(item.value)} {unit}
-            </span>
+            <span>{item.value === null || item.value === undefined ? "unavailable" : `${String(item.value)} ${unit}`}</span>
           </li>
         ))}
       </ul>
@@ -126,24 +125,55 @@ function UnitTooltip({
   );
 }
 
-export function OutcomeTrendChart({
-  points,
+type OutcomeChartPoint = OutcomePoint & { label: string; atLabel: string };
+
+function OutcomeTooltip({
+  active,
+  payload,
+  palette,
 }: {
-  points: { label: string; allowed: number; rejected: number }[];
+  active?: boolean;
+  payload?: ReadonlyArray<{ payload?: OutcomeChartPoint }>;
+  palette: Palette;
 }) {
+  const point = payload?.[0]?.payload;
+  if (!active || !point) return null;
+  const rows = [
+    { name: "Allowed", value: point.allowed, color: palette.allow },
+    { name: "Rejected", value: point.rejected, color: palette.reject },
+  ];
+  return (
+    <div className="chart-tooltip">
+      <p className="type-control">{point.atLabel}</p>
+      <ul className="mt-1 grid gap-1">
+        {rows.map((row) => (
+          <li key={row.name} className="chart-tooltip-row type-data">
+            <span className="inline-flex items-center gap-2">
+              <span className="chart-swatch" style={{ background: row.color }} />
+              <span className="type-secondary">{row.name}</span>
+            </span>
+            <span>{row.value === null ? "unavailable" : `${row.value} decisions`}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function OutcomeTrendChart({ points }: { points: OutcomeChartPoint[] }) {
   const palette = useChartPalette();
   if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
   return (
-    <div role="img" aria-label="Allowed and rejected decisions in each scrape interval. The vertical axis is a count of decisions and starts at zero. Allowed is a solid line. Rejected is dashed.">
+    <div role="img" aria-label="Allowed and rejected decisions in each scrape interval. The vertical axis is a count of decisions and starts at zero. Allowed is a solid line. Rejected is dashed. An unavailable series is omitted from the line.">
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
           <CartesianGrid stroke={palette.grid} vertical={false} />
-          <XAxis dataKey="label" tick={{ fill: palette.muted, fontSize: 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} />
-          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
-          <Tooltip content={(props) => <UnitTooltip {...props} unit="decisions" />} />
+          <XAxis dataKey="label" tick={{ fill: palette.muted, fontSize: 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} minTickGap={24} />
+          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={outcomeYDomain(points)} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
+          <Tooltip content={(props) => <OutcomeTooltip active={props.active} payload={props.payload as ReadonlyArray<{ payload?: OutcomeChartPoint }>} palette={palette} />} />
           <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
-          <Line type="monotone" dataKey="allowed" name="Allowed" stroke={palette.allow} strokeWidth={2} dot={false} isAnimationActive={false} />
-          <Line type="monotone" dataKey="rejected" name="Rejected" stroke={palette.reject} strokeWidth={2} strokeDasharray="6 4" dot={false} isAnimationActive={false} />
+          <Line type="monotone" dataKey="allowed" name="Allowed" stroke={palette.allow} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
+          <Line type="monotone" dataKey="rejected" name="Rejected" stroke={palette.reject} strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -164,7 +194,7 @@ export function BucketChart({
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: narrow ? 8 : 24 }} barCategoryGap="22%">
           <CartesianGrid stroke={palette.grid} vertical={false} />
-          <XAxis dataKey="label" tick={{ fill: palette.muted, fontSize: 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} interval={narrow ? 1 : 0} angle={narrow ? 0 : -35} height={narrow ? 32 : 70} textAnchor={narrow ? "middle" : "end"} />
+          <XAxis dataKey="label" tick={{ fill: palette.muted, fontSize: 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} minTickGap={narrow ? 28 : 16} angle={narrow ? 0 : -35} height={narrow ? 32 : 70} textAnchor={narrow ? "middle" : "end"} />
           <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
           <Tooltip content={(props) => <UnitTooltip {...props} unit="observations" />} />
           <Bar dataKey="cumulative" name="Cumulative observations" fill={palette.accent} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />

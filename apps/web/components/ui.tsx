@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { useHelp } from "@/components/help-dialog";
 
+export { presenceNote } from "@/lib/metrics/format";
+
 export function PageHeader({ title, description, about }: { title: string; description: string; about?: string }) {
   return (
     <header className="flex flex-wrap items-start justify-between gap-3">
@@ -21,18 +23,20 @@ export function Panel({
   about,
   aboutLabel = "About these figures",
   className = "",
+  titleClass = "type-card",
 }: {
   title?: string;
   children: ReactNode;
   about?: string;
   aboutLabel?: string;
   className?: string;
+  titleClass?: string;
 }) {
   return (
     <section className={`card ${className}`}>
       {title ? (
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="type-card">{title}</h2>
+          <h2 className={titleClass}>{title}</h2>
           {about ? <AboutButton topic={about} label={aboutLabel} /> : null}
         </div>
       ) : null}
@@ -76,15 +80,15 @@ export function MetricSummary({
   const absent = presence === "absent";
   const rule = tone === "allow" ? "border-l-allow" : tone === "reject" ? "border-l-reject" : tone === "warning" ? "border-l-warning" : tone === "danger" ? "border-l-danger" : "border-l-line";
   return (
-    <article className={`card border-l-[3px] ${rule}`}>
-      <h2 className="type-secondary text-ink-dim">{label}</h2>
+    <article className={`card min-w-0 border-l-[3px] ${rule}`}>
+      <p className="type-secondary text-ink-dim">{label}</p>
       <p className="type-metric mt-2">
         {absent ? "No sample" : value}{" "}
         {absent ? null : <span className="type-secondary text-ink-dim">{unit}</span>}
       </p>
-      <p className="type-body mt-2 text-ink-dim">{definition}</p>
+      <p className="type-secondary mt-2 wrap-break-word text-ink-dim">{definition}</p>
       <p className="type-secondary mt-1 text-ink">{source}</p>
-      {note ? <p className="type-secondary mt-1 text-ink-dim">{note}</p> : null}
+      {note ? <p className="type-secondary mt-1 wrap-break-word text-ink-dim">{note}</p> : null}
     </article>
   );
 }
@@ -126,10 +130,14 @@ export function DataTable({
   caption,
   columns,
   rows,
+  cellClass,
+  monoColumns,
 }: {
   caption: string;
   columns: string[];
   rows: string[][];
+  cellClass?: (rowIndex: number, cellIndex: number) => string | undefined;
+  monoColumns?: number[];
 }) {
   const stack = columns.length <= 4;
   const wide = columns.length > 4;
@@ -156,7 +164,7 @@ export function DataTable({
                   <td
                     key={`${columns[cellIndex]}-${index}`}
                     data-label={columns[cellIndex]}
-                    className={`${numeric[cellIndex] ? "type-data is-numeric" : "type-body is-text"}`}
+                    className={`${numeric[cellIndex] ? "type-data is-numeric" : monoColumns?.includes(cellIndex) ? "type-data is-text" : "type-body is-text"} ${cellClass?.(index, cellIndex) ?? ""}`}
                   >
                     {cell}
                   </td>
@@ -171,11 +179,5 @@ export function DataTable({
 }
 
 function isNumeric(cell: string): boolean {
-  return cell === "" || cell === "unavailable" || /^-?\d+(\.\d+)?$/.test(cell);
-}
-
-export function presenceNote(presence: "reported" | "absent", value: number): string {
-  if (presence === "absent") return "No sample, interpreted as 0";
-  if (value === 0) return "Reported 0";
-  return "Cumulative counter";
+  return cell === "" || cell === "—" || cell === "unavailable" || /^-?\d+(\.\d+)?$/.test(cell);
 }

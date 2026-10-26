@@ -11,6 +11,12 @@ export function formatSeconds(value: number): string {
   return `${text} s`
 }
 
+export function presenceNote(presence: 'reported' | 'absent', value: number): string {
+  if (presence === 'absent') return 'No sample in this scrape'
+  if (value === 0) return 'Reported 0'
+  return 'Cumulative counter'
+}
+
 export function formatAge(ageMs: number): string {
   const seconds = Math.max(0, Math.round(ageMs / 1000))
   if (seconds === 1) return '1 second ago'

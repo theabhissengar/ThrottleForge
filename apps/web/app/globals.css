@@ -262,6 +262,27 @@ input:disabled {
   gap: var(--space-6);
 }
 
+.metric-frame {
+  container-type: inline-size;
+}
+
+.metric-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@container (min-width: 36rem) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 72rem) {
+  .metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .card {
   background: var(--tf-surface);
   border: var(--border-width) solid var(--tf-line);
@@ -425,8 +446,8 @@ input:disabled {
 
 .glass {
   background: var(--tf-glass);
-  backdrop-filter: blur(var(--tf-blur));
   -webkit-backdrop-filter: blur(var(--tf-blur));
+  backdrop-filter: blur(var(--tf-blur));
 }
 
 .sidebar {
@@ -613,8 +634,8 @@ dialog {
   color: var(--tf-ink);
   padding: var(--space-4);
   box-shadow: var(--tf-overlay-shadow);
-  backdrop-filter: blur(var(--tf-blur));
   -webkit-backdrop-filter: blur(var(--tf-blur));
+  backdrop-filter: blur(var(--tf-blur));
 }
 
 dialog::backdrop {
@@ -646,8 +667,8 @@ dialog.help-dialog {
   border-radius: var(--radius-control);
   background: var(--tf-popover-glass);
   box-shadow: var(--tf-overlay-shadow);
-  backdrop-filter: blur(var(--tf-blur));
   -webkit-backdrop-filter: blur(var(--tf-blur));
+  backdrop-filter: blur(var(--tf-blur));
   padding: var(--space-2);
 }
 
@@ -805,30 +826,30 @@ dialog.help-dialog {
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass {
     background: var(--tf-sidebar);
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .theme-popover,
   dialog {
     background: var(--tf-popover);
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .glass {
     background: var(--tf-sidebar);
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   .theme-popover,
   dialog {
     background: var(--tf-popover);
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 

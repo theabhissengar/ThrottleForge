@@ -8,13 +8,13 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import { deriveFreshness, POLL_INTERVAL_MS, stepCumulative, type Cumulative, type Freshness } from "@/lib/metrics/deltas";
+import { applyReadings, deriveFreshness, EMPTY_HELD, POLL_INTERVAL_MS, type Freshness, type HeldCounters, type IntervalDelta } from "@/lib/metrics/deltas";
 import type { LivePayload, MetricsSnapshot } from "@/lib/metrics/types";
 
 export type TrendPoint = {
   at: number;
-  allowed: number;
-  rejected: number;
+  allowed: number | null;
+  rejected: number | null;
 };
 
 export type RecentRow = {
@@ -36,8 +36,8 @@ type LiveState = {
   metricsError?: string;
   snapshot: MetricsSnapshot | null;
   lastSuccessAt: number | null;
-  previous: Cumulative | null;
-  delta: Cumulative | null;
+  held: HeldCounters;
+  delta: IntervalDelta | null;
   sawReset: boolean;
   trend: TrendPoint[];
   recent: RecentRow[];
@@ -60,7 +60,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     health: "unknown",
     snapshot: null,
     lastSuccessAt: null,
-    previous: null,
+    held: { ...EMPTY_HELD },
     delta: null,
     sawReset: false,
     trend: [],
@@ -189,43 +189,17 @@ function reducer(state: LiveState, action: Action): LiveState {
   }
 
   const snapshot = payload.metrics.snapshot;
-  const cumulative: Cumulative = {
-    allowed: snapshot.allowed.value,
-    rejected: snapshot.rejected.value,
-    failures: snapshot.failures.value,
-    degraded: snapshot.degraded.value,
-  };
-  const step = stepCumulative(state.previous, cumulative);
-  if (step.kind === "baseline") {
-    return {
-      ...state,
-      attempted: true,
-      health: payload.health.state,
-      healthDetail,
-      metricsError: undefined,
-      snapshot,
-      lastSuccessAt: at,
-      previous: step.cumulative,
-      delta: null,
-      recent: pushRecent(state.recent, emptyRow(`base-${at}`, payload.fetchedAt, "baseline")),
-    };
-  }
-  if (step.kind === "reset") {
-    return {
-      ...state,
-      attempted: true,
-      health: payload.health.state,
-      healthDetail,
-      metricsError: undefined,
-      snapshot,
-      lastSuccessAt: at,
-      previous: step.cumulative,
-      delta: null,
-      sawReset: true,
-      trend: [],
-      recent: pushRecent(state.recent, emptyRow(`reset-${at}`, payload.fetchedAt, "reset")),
-    };
-  }
+  const applied = applyReadings(state.held, {
+    allowed: snapshot.allowed,
+    rejected: snapshot.rejected,
+    failures: snapshot.failures,
+    degraded: snapshot.degraded,
+  });
+  const trend = applied.reset
+    ? []
+    : applied.point
+      ? [...state.trend, { at, allowed: applied.point.allowed, rejected: applied.point.rejected }].slice(-24)
+      : state.trend;
   return {
     ...state,
     attempted: true,
@@ -234,33 +208,19 @@ function reducer(state: LiveState, action: Action): LiveState {
     metricsError: undefined,
     snapshot,
     lastSuccessAt: at,
-    previous: step.cumulative,
-    delta: step.delta,
-    trend: [
-      ...state.trend,
-      { at, allowed: step.delta.allowed, rejected: step.delta.rejected },
-    ].slice(-24),
+    held: applied.held,
+    delta: applied.delta,
+    sawReset: applied.reset || state.sawReset,
+    trend,
     recent: pushRecent(state.recent, {
-      id: `delta-${at}`,
+      id: `${applied.scrape}-${at}`,
       at: payload.fetchedAt,
-      allowedDelta: step.delta.allowed,
-      rejectedDelta: step.delta.rejected,
-      failuresDelta: step.delta.failures,
-      degradedDelta: step.delta.degraded,
-      scrape: "delta",
+      allowedDelta: applied.delta?.allowed ?? null,
+      rejectedDelta: applied.delta?.rejected ?? null,
+      failuresDelta: applied.delta?.failures ?? null,
+      degradedDelta: applied.delta?.degraded ?? null,
+      scrape: applied.scrape,
     }),
-  };
-}
-
-function emptyRow(id: string, at: string, scrape: "baseline" | "reset"): RecentRow {
-  return {
-    id,
-    at,
-    allowedDelta: null,
-    rejectedDelta: null,
-    failuresDelta: null,
-    degradedDelta: null,
-    scrape,
   };
 }
 

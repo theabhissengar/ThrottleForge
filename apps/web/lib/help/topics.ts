@@ -59,7 +59,7 @@ export const HELP_TOPICS: HelpTopic[] = [
       {
         heading: "The limit this app actually uses",
         paragraphs: [
-          "Requests to this app use a fixed window. The app counts until the time window ends, then starts again at zero. The policy reading shows that limit, the window length in milliseconds, whether the count is kept in memory or in Redis, and what happens if Redis fails.",
+          "Requests to this app use a fixed window. The app counts until the time window ends, then starts again at zero. The policy reading shows the configured store, that limit, the window length in milliseconds, and what happens if Redis fails. Observed store comes from metric labels and stays unobserved until a sample includes it. The policy store is not copied into the observed row.",
           "A configured Redis store is not the same as Redis being reachable. The policy reading does not check that Redis answered.",
         ],
       },
