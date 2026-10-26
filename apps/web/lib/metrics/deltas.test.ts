@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { presenceNote } from './format'
+import { decisionNotice, presenceNote } from './format'
 import {
   advanceSeries,
   applyReadings,
@@ -184,5 +184,18 @@ describe('presenceNote', () => {
   it('does not describe an absent sample as zero', () => {
     expect(presenceNote('absent', 0)).toBe('No sample in this scrape')
     expect(presenceNote('reported', 0)).toBe('Reported 0')
+  })
+})
+
+describe('decisionNotice', () => {
+  it('does not treat absent decision counters as a confirmed zero', () => {
+    expect(decisionNotice(absent, absent)).toBe('absent')
+    expect(decisionNotice(reported(0), absent)).toBeNull()
+    expect(decisionNotice(absent, reported(0))).toBeNull()
+  })
+
+  it('confirms zero only when both decision counters are reported as zero', () => {
+    expect(decisionNotice(reported(0), reported(0))).toBe('reported-zero')
+    expect(decisionNotice(reported(1), reported(0))).toBeNull()
   })
 })

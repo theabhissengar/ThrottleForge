@@ -17,6 +17,25 @@ export function presenceNote(presence: 'reported' | 'absent', value: number): st
   return 'Cumulative counter'
 }
 
+export type CountPresence = 'reported' | 'absent'
+
+/** Absent decision counters are not a confirmed zero. A zero notice requires both series to be reported as 0. */
+export function decisionNotice(
+  allowed: { presence: CountPresence; value: number },
+  rejected: { presence: CountPresence; value: number },
+): 'absent' | 'reported-zero' | null {
+  if (allowed.presence === 'absent' && rejected.presence === 'absent') return 'absent'
+  if (
+    allowed.presence === 'reported' &&
+    rejected.presence === 'reported' &&
+    allowed.value === 0 &&
+    rejected.value === 0
+  ) {
+    return 'reported-zero'
+  }
+  return null
+}
+
 export function formatAge(ageMs: number): string {
   const seconds = Math.max(0, Math.round(ageMs / 1000))
   if (seconds === 1) return '1 second ago'
