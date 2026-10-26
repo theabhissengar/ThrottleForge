@@ -90,7 +90,7 @@ function LiveDemonstration({ policy }: { policy: PolicyView }) {
             The API is configured to accept a development test client header from other callers. This demonstration does not send that header.
           </p>
         ) : null}
-        <button type="button" className="btn mt-4" onClick={() => void run()} disabled={running}>
+        <button type="button" className="btn btn-primary mt-4" onClick={() => void run()} disabled={running}>
           {running ? "Sending 10 requests" : "Run demonstration"}
         </button>
         {running ? <p className="type-secondary mt-3 text-ink-dim">Sending 10 requests to this instance.</p> : null}

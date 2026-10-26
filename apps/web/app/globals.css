@@ -26,31 +26,30 @@
   --duration-fast: 150ms;
   --duration-base: 200ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --tf-blur: 16px;
-  --tf-canvas: #eef1f6;
-  --tf-sidebar: #f7f9fc;
+  --tf-canvas: #e8edf2;
+  --tf-sidebar: #f4f7fb;
   --tf-surface: #ffffff;
-  --tf-elevated: #ffffff;
+  --tf-elevated: #f6f8fb;
   --tf-popover: #ffffff;
-  --tf-ink: #1a1d26;
-  --tf-muted: #5c6570;
-  --tf-line: #e4e7ee;
-  --tf-grid: #eef0f4;
+  --tf-ink: #15202b;
+  --tf-muted: #52606d;
+  --tf-line: #d8dee6;
+  --tf-grid: #e6ebf1;
   --tf-accent: #0e7490;
-  --tf-allow: #157347;
-  --tf-reject: #bd3a32;
+  --tf-allow: #0f7a45;
+  --tf-reject: #b42318;
   --tf-warning: #8a5a00;
-  --tf-danger: #b42318;
-  --tf-hover: #e7ebf2;
-  --tf-pressed: #dde3ec;
-  --tf-control-border: #767e8a;
-  --tf-selected: #e4eef8;
-  --tf-success-subtle: #e8f6ee;
-  --tf-warning-subtle: #faf3e4;
-  --tf-danger-subtle: #fbeceb;
+  --tf-danger: #9f1d1d;
+  --tf-hover: #e8eef4;
+  --tf-pressed: #dce4ed;
+  --tf-control-border: #6b7580;
+  --tf-selected: #e5f4f7;
+  --tf-success-subtle: #e7f6ee;
+  --tf-warning-subtle: #fbf4e4;
+  --tf-danger-subtle: #fdeceb;
   --tf-disabled: #61707f;
-  --tf-skeleton: #e6eaf0;
-  --tf-overlay: rgba(16, 24, 32, 0.56);
+  --tf-skeleton: #e4e9ef;
+  --tf-overlay: rgba(16, 24, 32, 0.52);
   --tf-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.04);
   --tf-overlay-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
   --tf-floor: #5c6b80;
@@ -60,8 +59,6 @@
   --tf-primary-hover: #0a6278;
   --tf-primary-pressed: #08566a;
   --tf-on-primary: #ffffff;
-  --tf-glass: color-mix(in srgb, var(--tf-sidebar) 86%, transparent);
-  --tf-popover-glass: color-mix(in srgb, var(--tf-popover) 92%, transparent);
   color-scheme: light;
 }
 
@@ -70,33 +67,33 @@
 }
 
 [data-theme="dark"] {
-  --tf-canvas: #050506;
-  --tf-sidebar: #0c0c0e;
-  --tf-surface: #111111;
-  --tf-elevated: #1a1a1c;
-  --tf-popover: #242424;
-  --tf-ink: #f4f4f5;
-  --tf-muted: #a1a1a6;
-  --tf-line: #2a2a2a;
-  --tf-grid: #222226;
+  --tf-canvas: #0c1118;
+  --tf-sidebar: #10161e;
+  --tf-surface: #161d27;
+  --tf-elevated: #1c2532;
+  --tf-popover: #222c3a;
+  --tf-ink: #e7edf4;
+  --tf-muted: #9aa6b4;
+  --tf-line: #2c3644;
+  --tf-grid: #24303c;
   --tf-accent: #3ec6d8;
-  --tf-allow: #3ddc97;
+  --tf-allow: #3dbe86;
   --tf-reject: #f07178;
   --tf-warning: #e6a23c;
-  --tf-danger: #f07178;
-  --tf-hover: #1f1f22;
-  --tf-pressed: #2a2a2e;
-  --tf-control-border: #6a6a72;
-  --tf-selected: #142428;
-  --tf-success-subtle: #10241c;
+  --tf-danger: #e85d4c;
+  --tf-hover: #1e2834;
+  --tf-pressed: #283240;
+  --tf-control-border: #6a7684;
+  --tf-selected: #14303a;
+  --tf-success-subtle: #10281e;
   --tf-warning-subtle: #2a2214;
-  --tf-danger-subtle: #2c1618;
-  --tf-disabled: #7a7a82;
-  --tf-skeleton: #1c1c1f;
-  --tf-overlay: rgba(0, 0, 0, 0.72);
-  --tf-shadow: none;
-  --tf-overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-  --tf-floor: #8b9099;
+  --tf-danger-subtle: #2c1816;
+  --tf-disabled: #8b95a1;
+  --tf-skeleton: #1a222c;
+  --tf-overlay: rgba(6, 10, 16, 0.72);
+  --tf-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --tf-overlay-shadow: 0 8px 24px rgba(0, 0, 0, 0.36);
+  --tf-floor: #8b97a6;
   --tf-ceiling: #c4b49a;
   --tf-oracle: #c4b5e0;
   --tf-primary: #3ec6d8;
@@ -126,6 +123,11 @@
   --color-selected: var(--tf-selected);
   --font-sans: var(--font-plex-sans), "IBM Plex Sans", ui-sans-serif, sans-serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  overflow-x: clip;
 }
 
 body {
@@ -289,13 +291,31 @@ input:disabled {
   border-radius: var(--radius-card);
   padding: var(--space-4);
   box-shadow: var(--tf-shadow);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .stat-tile {
   border: var(--border-width) solid var(--tf-line);
   border-radius: var(--radius-control);
-  background: var(--tf-canvas);
+  background: var(--tf-elevated);
   padding: var(--space-3);
+}
+
+.card.border-l-allow {
+  background: color-mix(in srgb, var(--tf-success-subtle) 62%, var(--tf-surface));
+}
+
+.card.border-l-reject {
+  background: color-mix(in srgb, var(--tf-danger-subtle) 50%, var(--tf-surface));
+}
+
+.card.border-l-warning {
+  background: color-mix(in srgb, var(--tf-warning-subtle) 70%, var(--tf-surface));
+}
+
+.card.border-l-danger {
+  background: color-mix(in srgb, var(--tf-danger-subtle) 78%, var(--tf-surface));
 }
 
 .btn {
@@ -336,6 +356,12 @@ input:disabled {
 .btn-primary:active {
   background: var(--tf-primary-pressed);
   border-color: var(--tf-primary-pressed);
+}
+
+.btn.btn-primary:disabled {
+  color: var(--tf-on-primary);
+  background: var(--tf-disabled);
+  border-color: var(--tf-disabled);
 }
 
 .btn:disabled {
@@ -414,7 +440,7 @@ input:disabled {
   display: block;
   border: var(--border-width) dashed var(--tf-control-border);
   border-radius: var(--radius-card);
-  background: var(--tf-canvas);
+  background: var(--tf-elevated);
   padding: var(--space-6) var(--space-4);
 }
 
@@ -445,9 +471,11 @@ input:disabled {
 }
 
 .glass {
-  background: var(--tf-glass);
-  -webkit-backdrop-filter: blur(var(--tf-blur));
-  backdrop-filter: blur(var(--tf-blur));
+  background: var(--tf-sidebar);
+}
+
+.app-header.glass {
+  background: var(--tf-surface);
 }
 
 .sidebar {
@@ -582,6 +610,7 @@ input:disabled {
 .nav-link[aria-current="page"] {
   background: var(--tf-selected);
   color: var(--tf-ink);
+  box-shadow: inset 2px 0 0 var(--tf-accent);
 }
 
 .nav-link:hover {
@@ -595,6 +624,14 @@ input:disabled {
   z-index: 20;
   border-bottom: var(--border-width) solid var(--tf-line);
   padding: var(--space-3) var(--space-4);
+}
+
+.status-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
 }
 
 @media (min-width: 1024px) {
@@ -627,15 +664,15 @@ input:disabled {
 
 dialog {
   margin: auto;
-  max-width: calc(100% - 32px);
+  max-width: calc(100% - var(--space-8));
+  max-height: calc(100dvh - var(--space-8));
+  overflow: auto;
   border: var(--border-width) solid var(--tf-line);
   border-radius: var(--radius-dialog);
-  background: var(--tf-popover-glass);
+  background: var(--tf-popover);
   color: var(--tf-ink);
   padding: var(--space-4);
   box-shadow: var(--tf-overlay-shadow);
-  -webkit-backdrop-filter: blur(var(--tf-blur));
-  backdrop-filter: blur(var(--tf-blur));
 }
 
 dialog::backdrop {
@@ -643,13 +680,19 @@ dialog::backdrop {
 }
 
 dialog.nav-dialog {
-  width: min(100% - 32px, 22rem);
+  width: min(100% - var(--space-8), 22rem);
+  max-height: calc(100dvh - var(--space-8));
+  overflow: auto;
 }
 
 dialog.help-dialog {
-  width: min(100% - 32px, 32rem);
-  max-height: min(100% - 32px, 40rem);
+  width: min(100% - var(--space-8), 32rem);
+  max-height: min(calc(100dvh - var(--space-8)), 40rem);
   overflow: auto;
+}
+
+.docs-topic {
+  scroll-margin-top: var(--space-12);
 }
 
 .theme-menu {
@@ -665,10 +708,8 @@ dialog.help-dialog {
   min-width: 11rem;
   border: var(--border-width) solid var(--tf-line);
   border-radius: var(--radius-control);
-  background: var(--tf-popover-glass);
+  background: var(--tf-popover);
   box-shadow: var(--tf-overlay-shadow);
-  -webkit-backdrop-filter: blur(var(--tf-blur));
-  backdrop-filter: blur(var(--tf-blur));
   padding: var(--space-2);
 }
 
@@ -715,10 +756,16 @@ dialog.help-dialog {
 }
 
 .chart-swatch {
-  width: 8px;
-  height: 8px;
+  width: var(--status-dot);
+  height: var(--status-dot);
   flex: none;
   border-radius: 999px;
+}
+
+.chart-frame {
+  width: 100%;
+  height: var(--chart-height);
+  min-width: 0;
 }
 
 .data-table {
@@ -729,7 +776,7 @@ dialog.help-dialog {
 
 .data-table th,
 .data-table td {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border-bottom: var(--border-width) solid var(--tf-line);
   vertical-align: middle;
 }
@@ -759,6 +806,17 @@ dialog.help-dialog {
 
 .table-scroll {
   overflow-x: auto;
+  max-width: 100%;
+}
+
+.table-scroll .data-table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.table-scroll .data-table th,
+.table-scroll .data-table td {
+  white-space: nowrap;
 }
 
 .table-scroll th:first-child,
@@ -774,6 +832,11 @@ dialog.help-dialog {
 }
 
 @media (max-width: 767px) {
+  table.stack-narrow caption {
+    display: block;
+    width: 100%;
+  }
+
   table.stack-narrow thead {
     position: absolute;
     width: 1px;
@@ -820,36 +883,6 @@ dialog.help-dialog {
     font-family: var(--font-sans), "IBM Plex Sans", sans-serif;
     font-weight: 400;
     text-align: left;
-  }
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass {
-    background: var(--tf-sidebar);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  .theme-popover,
-  dialog {
-    background: var(--tf-popover);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .glass {
-    background: var(--tf-sidebar);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  .theme-popover,
-  dialog {
-    background: var(--tf-popover);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
   }
 }
 

@@ -104,7 +104,7 @@ export function DocsIndex() {
         </ul>
       </nav>
       {HELP_TOPICS.map((topic) => (
-        <section key={topic.id} id={topic.id} className="card grid gap-3">
+        <section key={topic.id} id={topic.id} className="card docs-topic grid gap-3">
           <h2 className="type-section">{topic.title}</h2>
           {topic.sections.map((section) => (
             <div key={section.heading}>

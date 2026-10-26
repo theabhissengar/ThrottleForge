@@ -219,7 +219,7 @@ function AppHeader({
           <div className="mb-2 lg:hidden">
             <Wordmark />
           </div>
-          <p className="type-body" aria-live="polite">
+          <p className="status-line type-body" aria-live="polite">
             <span className="text-ink-dim">API </span>
             <StatusWord
               tone={live.health === "reachable" ? "allow" : live.health === "unreachable" ? "reject" : "mute"}
@@ -235,7 +235,7 @@ function AppHeader({
           </p>
           <p className="type-secondary mt-1 text-ink-dim">Metrics are this Node process only. They are not a cluster total.</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <ThemeMenu choice={themeChoice} onChange={onTheme} />
           <button type="button" className="btn mobile-only" onClick={onLearn}>
             Learn

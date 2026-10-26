@@ -219,7 +219,7 @@ function ArtifactDetail({ item }: { item: ImportedFile }) {
     return (
       <div className="grid gap-4">
         <Panel title="Request outcomes">
-          <p className="mb-3 text-sm text-ink-dim">HTTP 200 is success. HTTP 429 is expectedRateLimited and is not an unexpected error.</p>
+          <p className="mb-3 type-body text-ink-dim">HTTP 200 is success. HTTP 429 is expectedRateLimited and is not an unexpected error.</p>
           <DataTable
             caption="HTTP bench outcome counts."
             columns={["Success (200)", "Expected 429", "Unexpected status", "Transport errors"]}
@@ -257,7 +257,7 @@ function ArtifactDetail({ item }: { item: ImportedFile }) {
   return (
     <div className="grid gap-4">
       <Panel title="Correctness">
-        <p className="text-sm">Matched: {report.correctness.matched ? "yes" : "no"}</p>
+        <p className="type-body">Matched: {report.correctness.matched ? "yes" : "no"}</p>
         <div className="mt-3">
           <DataTable
             caption="Decision mismatches for allowed, remaining, and resetAt."
@@ -275,7 +275,7 @@ function ArtifactDetail({ item }: { item: ImportedFile }) {
         </div>
       </Panel>
       <Panel title="Observational timings from this capture">
-        <p className="mb-3 text-sm text-ink-dim">Memory and Redis timings are machine-dependent and are not a ranking.</p>
+        <p className="mb-3 type-body text-ink-dim">Memory and Redis timings are machine-dependent and are not a ranking.</p>
         <DataTable
           caption="Observational blocks printed by redis-compare."
           columns={["Side", "Elapsed ms", "Throughput rps", "p50 ms", "p95 ms", "p99 ms"]}
@@ -292,7 +292,7 @@ function ArtifactDetail({ item }: { item: ImportedFile }) {
 function TimingTable({ rows }: { rows: string[][] }) {
   return (
     <Panel title="Observational timings from this capture">
-      <p className="mb-3 text-sm text-ink-dim">These timings are machine-dependent and are not a ranking.</p>
+      <p className="mb-3 type-body text-ink-dim">These timings are machine-dependent and are not a ranking.</p>
       <DataTable
         caption="Elapsed time, throughput, and latency percentiles from the file."
         columns={["Elapsed ms", "Throughput rps", "p50 ms", "p95 ms", "p99 ms"]}

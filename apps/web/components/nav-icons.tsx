@@ -54,7 +54,7 @@ export function ChevronIcon({ direction, size = 20 }: { direction: "left" | "rig
 
 export function SunIcon() {
   return (
-    <svg width={14} height={14} {...shared}>
+    <svg width={20} height={20} {...shared}>
       <circle cx="10" cy="10" r="3" />
       <path d="M10 3 V5 M10 15 V17 M3 10 H5 M15 10 H17" />
     </svg>
@@ -63,7 +63,7 @@ export function SunIcon() {
 
 export function MoonIcon() {
   return (
-    <svg width={14} height={14} {...shared}>
+    <svg width={20} height={20} {...shared}>
       <path d="M12 3.5 A6 6 0 1 0 16.5 12 A4.5 4.5 0 0 1 12 3.5 Z" />
     </svg>
   );
@@ -71,7 +71,7 @@ export function MoonIcon() {
 
 export function MonitorIcon() {
   return (
-    <svg width={14} height={14} {...shared}>
+    <svg width={20} height={20} {...shared}>
       <rect x="3" y="4" width="14" height="9" rx="1" />
       <path d="M8 16 H12 M10 13 V16" />
     </svg>
