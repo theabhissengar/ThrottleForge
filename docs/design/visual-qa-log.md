@@ -104,3 +104,97 @@ Algorithm Lab, Benchmark History, Adaptive Explorer, and Documentation render in
 `npm run test:web`: 10 files, 75 tests, passed. `npm run build:web`: passed.
 
 Screenshots: `stage9-drawer-320.png`, `stage9-compare-dark-1440.png`.
+
+---
+
+# Algorithm Lab redesign
+
+Reference board (confirmed open before Stage 1 and used throughout):
+
+`C:\Users\theab\Downloads\ThrottleForge Algorithm Lab Dashboard Mockup.png`
+
+Screenshots live under `docs/design/screenshots/`.
+
+## Lab Stage 1 — Heading, introduction, scenario selector
+
+Compared against board desktop-dark, desktop-light, and mobile-closed frames. Board invents Run simulation / parameter inputs; those were **not** added. Hierarchy, spacing, cyan selected cards, and shell integration were the comparison targets.
+
+**Initial screenshots:** `lab-s1-dark-1440.png`, `lab-s1-light-1440.png`, `lab-s1-mobile-390.png`.
+
+**Mismatches vs target / prior Lab:**
+- Scenario legend used `type-card` instead of Overview section weight.
+- Scenario intent used `type-control` (under-emphasized vs ID).
+- Scenario block was a bare fieldset, not a panel surface.
+- Intro had no max-width constraint.
+
+**Fixes (files):**
+- `apps/web/components/algorithm-lab.tsx` — `algorithm-lab` root, intro class, Scenario `card` panel, `type-card` intents, `type-section` legend.
+- `apps/web/app/globals.css` — Lab-scoped `.algorithm-lab-intro`, `.algorithm-lab-scenarios`, `.algorithm-lab-scenario-grid`, `.algorithm-lab-scenario`.
+
+**Re-check:** At 1440, grid is two columns (`553.6px 553.6px`); selected surface `rgb(18, 52, 62)` / border `rgb(47, 120, 140)`; About does not overlap the title; no page overflow. At 390, one column; title + About aligned. Light theme surfaces use shared tokens.
+
+**Functional:** Six radios, default `boundary-burst`, IDs/intents unchanged.
+
+## Lab Stage 2 — Metadata, Decisions chart, correctness table
+
+Board has no exact Decisions/correctness twin (shows KPI cards + time-series). Logged as **no direct reference frame** for those sections; polished against shared chart/table conventions and board allow/reject colors.
+
+**Screenshots:** `lab-s2-dark-1440.png`, `lab-s2-1024.png`, `lab-s2-768.png`, `lab-s2-390.png`.
+
+**Mismatches:**
+- Panel titles still `type-card`.
+- Metadata competed with scenarios.
+- `CompareBarChart` margins/legend density could be tighter on narrow widths.
+- Mobile `--chart-height: 220px` media rule was overridden by a later `.chart-frame { height: var(--chart-height) }` (pre-existing).
+
+**Fixes:**
+- `algorithm-lab.tsx` — compact `.algorithm-lab-meta`; Decisions `titleClass="type-section"`; correctness `DataTable` `stack`.
+- `charts.tsx` — `CompareBarChart` margins, dashed grid, compact bar sizing/legend.
+- `globals.css` — `.algorithm-lab-meta`, `.algorithm-lab-table`; mobile chart height set via `:root { --chart-height: 220px }` under `max-width: 639px`.
+
+**Re-check:** Allow `#27d99a` / reject `#f05b73` in dark. Boundary-burst table 20/0, 10/10, 10/10. Scenario switch to `sustained-over` → 10/10, 10/10, 19/1. Stacked correctness on 390 shows every field via `data-label` / `::before`. No overflow at 1440/1024/768/390. Chart height 220px after fix on 390.
+
+## Lab Stage 3 — Observational timings and About dialogs
+
+Observational timings: **no direct board twin** (board shows latency histogram / Key observations). About dialog uses shared help chrome.
+
+**Screenshots:** `lab-s3-timings-1440.png`, `lab-s3-timings-390.png`, `lab-s3-about-1440.png`, `lab-s3-about-390.png`.
+
+**Changes:** Timings panel `titleClass="type-section"` + `stack` (already in Stage 2 component pass). No help copy changes.
+
+**Verification:**
+- Timings stack on 390 preserves Algorithm, Elapsed ms, Throughput rps, p50/p95/p99 with labels.
+- About opens topic `algorithms` (“Algorithm Lab”); Close visible; dialog in viewport on 390 (`358×697` inside 390×844).
+- Escape closes; focus restores to “About this page” after a real click open.
+- Automated Tab traversal still unreliable in this browser tooling (same limitation as Overview Stage 9).
+
+## Lab Stage 4 — Regression and acceptance
+
+| Viewport | Overflow | About overlap | Scenario cols |
+| --- | --- | --- | --- |
+| 320×700 | no | no | 1 |
+| 375×812 | no | no | 1 |
+| 390×844 | no | no | 1 |
+| 430×932 | no | no | 1 |
+| 844×390 | no | no | 2 |
+| 768×1024 | no | no | 2 |
+| 1024×900 | no | no | 2 |
+| 1280×900 | no | no | 2 |
+| 1440×1000 | no | no | 2 |
+| 1920×1080 | no | no | 2 |
+
+Screenshot: `lab-s4-320.png`.
+
+**Scenarios:** All six allowed/rejected triples match committed JSON (`allScenariosOk: true`).
+
+**Themes:** Light / Dark / System applied; System resolved to dark on this machine; `--tf-allow` / `--tf-selected` swap correctly.
+
+**Sibling smoke:**
+- Overview — loads Availability / demonstration shell.
+- Benchmark History — empty import state; after programmatic compare JSON import, shared `CompareView` shows Decisions + Observational timings with badge “Imported this session”.
+- Adaptive Explorer — committed reference + charts render.
+- Docs — Algorithm Lab topic present.
+
+**Commands:** `npm run test:web` — 10 files, 75 tests, passed. `npm run build:web` — passed.
+
+**Unverified / limitations:** Full manual keyboard Tab order across every control; chart tooltip pixel-perfect hover at every viewport (tooltip component unchanged and theme-aware). Board invents Run simulation, KPIs, recent simulations — intentionally not built.

@@ -263,14 +263,14 @@ export function CompareBarChart({
   return (
     <div className="chart-frame" role="img" aria-label="Allowed and rejected counts for each algorithm. The vertical axis is a request count and starts at zero.">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 8 }} barGap={4} barCategoryGap="22%">
-          <CartesianGrid stroke={palette.grid} vertical={false} />
-          <XAxis dataKey="name" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} interval={0} tickFormatter={(value) => categoryTick(value, compact)} />
-          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
+        <BarChart data={points} margin={{ top: 12, right: 12, left: 4, bottom: compact ? 4 : 8 }} barGap={6} barCategoryGap={compact ? "28%" : "24%"}>
+          <CartesianGrid stroke={palette.grid} vertical={false} strokeDasharray="3 3" />
+          <XAxis dataKey="name" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} interval={0} tickFormatter={(value) => categoryTick(value, compact)} height={compact ? 36 : 40} />
+          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={compact ? 36 : 44} axisLine={false} tickLine={false} />
           <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <UnitTooltip {...props} unit="requests" />} />
-          <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
-          <Bar dataKey="allowed" name="Allowed" fill={palette.allow} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
-          <Bar dataKey="rejected" name="Rejected" fill={palette.reject} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
+          <Legend wrapperStyle={{ fontSize: 12, color: palette.muted, paddingTop: 4 }} iconType="square" iconSize={10} />
+          <Bar dataKey="allowed" name="Allowed" fill={palette.allow} maxBarSize={compact ? 24 : 32} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
+          <Bar dataKey="rejected" name="Rejected" fill={palette.reject} maxBarSize={compact ? 24 : 32} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
         </BarChart>
       </ResponsiveContainer>
     </div>
