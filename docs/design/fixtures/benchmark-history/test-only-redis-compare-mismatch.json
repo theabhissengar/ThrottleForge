@@ -1,0 +1,45 @@
+{
+  "mode": "redis-compare",
+  "scenario": "boundary-burst",
+  "limit": 10,
+  "windowMs": 1000,
+  "traceLength": 20,
+  "correctness": {
+    "matched": false,
+    "mismatches": [
+      {
+        "index": 3,
+        "memory": {
+          "allowed": true,
+          "remaining": 6,
+          "resetAt": 1700000001
+        },
+        "redis": {
+          "allowed": false,
+          "remaining": 0,
+          "resetAt": 1700000002
+        }
+      }
+    ]
+  },
+  "observational": {
+    "memory": {
+      "elapsedMs": 12.4,
+      "throughputRps": 1612.9,
+      "latency": {
+        "p50Ms": 0.4,
+        "p95Ms": 1.1,
+        "p99Ms": 2.0
+      }
+    },
+    "redis": {
+      "elapsedMs": 48.2,
+      "throughputRps": null,
+      "latency": {
+        "p50Ms": 1.8,
+        "p95Ms": 4.2,
+        "p99Ms": 7.5
+      }
+    }
+  }
+}

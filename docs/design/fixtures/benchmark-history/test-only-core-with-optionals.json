@@ -1,0 +1,24 @@
+{
+  "mode": "core",
+  "algorithm": "fixed-window",
+  "pattern": "burst",
+  "requests": 1000,
+  "concurrency": 10,
+  "limit": 100,
+  "windowMs": 60000,
+  "allowed": 100,
+  "rejected": 900,
+  "errors": 0,
+  "elapsedMs": 1240,
+  "throughputRps": 806.45,
+  "latency": {
+    "p50Ms": 3.2,
+    "p95Ms": 12.1,
+    "p99Ms": 28.6
+  },
+  "storeSizeBefore": 0,
+  "storeSizeAfter": 1,
+  "storeSizeAtBoundary": 1,
+  "storeSizeAfterTraffic": 1,
+  "storeSizeAfterWindowAdvanceAndSweep": 0
+}

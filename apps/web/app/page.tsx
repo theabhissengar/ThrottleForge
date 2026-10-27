@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { OverviewDashboard } from "@/components/overview-dashboard";
+import { OverviewContentSkeleton } from "@/components/skeletons/overview-content-skeleton";
 import { probeEnabled } from "@/lib/demo/access";
 
 export const metadata = {
@@ -9,7 +10,7 @@ export const metadata = {
 
 export default function OverviewPage() {
   return (
-    <Suspense fallback={<p className="type-body">Loading overview.</p>}>
+    <Suspense fallback={<OverviewContentSkeleton mode="full" />}>
       <OverviewWithProbe />
     </Suspense>
   );

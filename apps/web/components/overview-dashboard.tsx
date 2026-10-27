@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { BucketChart, OutcomeTrendChart } from "@/components/charts";
 import { DemoProbe } from "@/components/demo-probe";
 import { requestLiveRefresh, useLive } from "@/components/live-provider";
-import { Callout, DataTable, MetricSummary, PageHeader, Panel, presenceNote, SkeletonBlock } from "@/components/ui";
+import { BrandLoader } from "@/components/brand-loader";
+import { OverviewContentSkeleton } from "@/components/skeletons/overview-content-skeleton";
+import { SkeletonFactValue } from "@/components/skeletons/primitives";
+import { Callout, DataTable, MetricSummary, PageHeader, Panel, presenceNote } from "@/components/ui";
 import { readPolicyPayload, redisFailureLabel, type PolicyRead } from "@/lib/demo/policy";
 import type { IntervalDelta } from "@/lib/metrics/deltas";
 import { decisionNoticeCopy, formatCount, formatSeconds } from "@/lib/metrics/format";
@@ -60,25 +63,23 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
           </div>
           <div className="availability-policy">
             <h3 className="type-secondary text-ink-dim">Policy</h3>
+            {policy.state === "loading" ? (
+              <div className="mt-2">
+                <BrandLoader variant="inline" label="Loading policy" status="Reading policy" />
+              </div>
+            ) : null}
             <dl className="availability-facts">
-              <Fact term="Configured store" value={policyFact(policy, (item) => item.store)} unavailable={policy.state !== "ok"} mono={policy.state === "ok"} />
-              <Fact term="Limit" value={policyFact(policy, (item) => String(item.limit))} unavailable={policy.state !== "ok"} mono={policy.state === "ok"} />
-              <Fact term="Window" value={policyFact(policy, (item) => `${item.windowMs} ms`)} unavailable={policy.state !== "ok"} mono={policy.state === "ok"} />
-              <Fact term="Redis failure mode" value={policyFact(policy, redisFailureLabel)} unavailable={policy.state !== "ok"} />
+              <PolicyFact term="Configured store" policy={policy} present={(item) => item.store} mono />
+              <PolicyFact term="Limit" policy={policy} present={(item) => String(item.limit)} mono />
+              <PolicyFact term="Window" policy={policy} present={(item) => `${item.windowMs} ms`} mono />
+              <PolicyFact term="Redis failure mode" policy={policy} present={redisFailureLabel} />
             </dl>
           </div>
         </div>
       </Panel>
       <DemoProbe policy={policy} liveProbe={liveProbe} />
       {!live.attempted ? (
-        <div className="metric-frame">
-          <div className="metric-grid">
-          <SkeletonBlock label="Loading allowed decisions" kind="metric" />
-          <SkeletonBlock label="Loading rejected decisions" kind="metric" />
-          <SkeletonBlock label="Loading degraded admissions" kind="metric" />
-          <SkeletonBlock label="Loading limiter operation time" kind="chart" />
-          </div>
-        </div>
+        <OverviewContentSkeleton mode="metrics" />
       ) : (
         <>
           {snapshot ? (
@@ -209,10 +210,31 @@ export function OverviewDashboard({ liveProbe }: { liveProbe: boolean }) {
   );
 }
 
-function policyFact(policy: PolicyRead | { state: "loading" }, present: (policy: Extract<PolicyRead, { state: "ok" }>["policy"]) => string): string {
-  if (policy.state === "loading") return "Loading";
-  if (policy.state === "unavailable") return "Unavailable";
-  return present(policy.policy);
+function PolicyFact({
+  term,
+  policy,
+  present,
+  mono = false,
+}: {
+  term: string;
+  policy: PolicyRead | { state: "loading" };
+  present: (policy: Extract<PolicyRead, { state: "ok" }>["policy"]) => string;
+  mono?: boolean;
+}) {
+  if (policy.state === "loading") {
+    return (
+      <div className="min-w-0">
+        <dt className="type-secondary text-ink-dim">{term}</dt>
+        <dd className="mt-1">
+          <SkeletonFactValue />
+        </dd>
+      </div>
+    );
+  }
+  if (policy.state === "unavailable") {
+    return <Fact term={term} value="Unavailable" unavailable />;
+  }
+  return <Fact term={term} value={present(policy.policy)} mono={mono} />;
 }
 
 function usePolicy(): PolicyRead | { state: "loading" } {

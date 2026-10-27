@@ -1,0 +1,24 @@
+{
+  "mode": "http",
+  "baseUrl": "http://127.0.0.1:3001",
+  "path": "/demo/limited",
+  "pattern": "burst",
+  "requests": 200,
+  "concurrency": 20,
+  "success": 100,
+  "expectedRateLimited": 98,
+  "unexpectedStatus": 0,
+  "transportErrors": 2,
+  "elapsedMs": 1540,
+  "throughputRps": 129.87,
+  "latency": {
+    "p50Ms": 4.5,
+    "p95Ms": 18.2,
+    "p99Ms": 42.0
+  },
+  "observationalMetrics": {
+    "throttleforge_decisions_total{outcome=\"allow\"}": 100,
+    "throttleforge_decisions_total{outcome=\"reject\"}": 98,
+    "throttleforge_store_failures_total": null
+  }
+}

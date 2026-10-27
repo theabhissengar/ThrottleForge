@@ -1,0 +1,20 @@
+{
+  "mode": "core",
+  "algorithm": "token-bucket",
+  "pattern": "sustained",
+  "requests": 500,
+  "concurrency": 5,
+  "limit": 50,
+  "windowMs": 1000,
+  "allowed": 50,
+  "rejected": 450,
+  "errors": 0,
+  "elapsedMs": 820,
+  "throughputRps": null,
+  "latency": {
+    "p50Ms": 2.1,
+    "p95Ms": 8.4,
+    "p99Ms": 15.0
+  },
+  "storeSizeBefore": 0
+}

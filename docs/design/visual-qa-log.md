@@ -198,3 +198,279 @@ Screenshot: `lab-s4-320.png`.
 **Commands:** `npm run test:web` — 10 files, 75 tests, passed. `npm run build:web` — passed.
 
 **Unverified / limitations:** Full manual keyboard Tab order across every control; chart tooltip pixel-perfect hover at every viewport (tooltip component unchanged and theme-aware). Board invents Run simulation, KPIs, recent simulations — intentionally not built.
+
+---
+
+# Benchmark History redesign
+
+Reference board (confirmed open before Stage 1 and used throughout):
+
+`C:\Users\theab\Downloads\Benchmark History Dashboard Mockup.png`
+
+Screenshots live under `docs/design/screenshots/`.
+
+**Intentionally excluded board inventions (not product features):** aggregate KPI cards (Total/Successful/With errors/Last run), persistent run history table, search/filters/sort/pagination, Summary/Decisions/Timing/Configuration tabs, Run Benchmark controls.
+
+## History Stage 1 — Heading and import panel
+
+| Screenshot | Page/mode | Viewport | Theme | State | Reference frame |
+| --- | --- | --- | --- | --- | --- |
+| `hist-s1-dark-1440.png` | `/benchmarks` empty | 1440×1000 | Dark | Empty import | Desktop Dark |
+| `hist-s1-light-1440.png` | `/benchmarks` empty | 1440×1000 | Light | Empty import | Desktop Light |
+| `hist-s1-mobile-390.png` | `/benchmarks` empty | 390×844 | Dark | Empty import | Mobile menu closed |
+
+**Checks:** No page overflow at 1440 or 390. Drop zone uses dashed border on elevated surface. About this page does not overlap the title (1440: About at x≈1317; 390: same row as title). File input present; CLI commands listed as five code chips. Menu visible at 390; sidebar collapse control at 1440.
+
+**Mismatches vs board:** Board shows KPI strip and history table above an import — those sections are intentionally excluded. Import polish compared for hierarchy, dashed drop zone, cyan About links, and spacing only.
+
+**Fixes this stage:** History-scoped `.benchmark-history*` classes; drag-over/`is-dragging`/`is-reading`/`focus-within` on drop zone; visible selected-filename area (appears after import); `type-section` import panel title; command chip list.
+
+## History Stage 2 — Session metadata and decision tables
+
+Fixtures validated with `parseArtifact` before use (all OK): `test-only-core-with-optionals.json`, `test-only-core-absent-optionals-null-throughput.json`, `test-only-http-null-metric.json`, `test-only-redis-compare-mismatch.json`, plus committed compare/adaptive JSON.
+
+| Screenshot | Page/mode | Viewport | Theme | State | Reference frame |
+| --- | --- | --- | --- | --- | --- |
+| `hist-s2-core-absent-dark-1440.png` | core (absent optionals, null throughput) | 1440×1000 | Dark | Imported | No direct frame (board history table excluded) |
+| `hist-s2-core-optionals-dark-1440.png` | core (optionals present) | 1440×1000 | Dark | Imported | No direct frame |
+| `hist-s2-core-1024.png` | core | 1024×900 | Dark | Imported | Tablet ~1024 polish only |
+| `hist-s2-core-768.png` | core | 768×1024 | Dark | Imported | Tablet ~768 polish only |
+| `hist-s2-core-390.png` | core | 390×844 | Dark | Imported | Mobile closed polish only |
+
+**Value semantics verified (CDP table scrape):** explicit Errors `0`; absent store optionals render blank cells; `throughputRps: null` renders `unavailable`. Selected session uses `.is-selected`; import panel shows `Viewing: <selected file>` synced to selection. Stacked `data-label` fields present at 390. No page overflow at 1440/1024/768/390.
+
+**Intentionally excluded:** board KPI cards and persistent filtered history table.
+
+**Fixes this stage:** session card/row selection styles; `type-section` session panel; filename `title` + wrap; detail meta strip; Decisions/outcomes tables with `stack` where appropriate; Viewing label tracks selected item.
+
+## History Stage 3 — Timings, charts, shared mode views
+
+Shared `CompareView` and embedded `AdaptiveExplorer` unchanged. History only wraps with `.benchmark-history-detail` + selected-file meta.
+
+| Screenshot | Page/mode | Viewport | Theme | State | Reference frame |
+| --- | --- | --- | --- | --- | --- |
+| `hist-s3-compare-dark-1440.png` | compare import | 1440×1000 | Dark | Imported boundary-burst | No direct twin (board KPI/tabs excluded); chart polish vs Lab |
+| `hist-s3-compare-light-1440.png` | compare import | 1440×1000 | Light | Imported | Desktop Light polish |
+| `hist-s3-compare-chart-light-1440.png` | compare Decisions chart | 1440×1000 | Light | Imported | Chart/table polish |
+| `hist-s3-compare-768.png` | compare | 768×1024 | Dark (CDP) | Imported | Tablet polish |
+| `hist-s3-compare-390.png` | compare | 390×844 | Dark (CDP) | Imported | Mobile polish |
+| `hist-s3-adaptive-dark-1440.png` | adaptive-compare | 1440×1000 | Dark | Imported | No direct board twin |
+| `hist-s3-adaptive-light-1440.png` | adaptive-compare | 1440×1000 | Light | Imported | Embedded Adaptive transcript / pass-set means |
+
+**CDP checks:** compare chart present; no page overflow at 1440/768/390; chart width 671px at 768 and 325px at 390 without clipping past viewport. Adaptive shows `Adaptive transcript`, Pass-set means, multiple charts; overflow false. No shared chart component edits required.
+
+## History Stage 4 — Regression and acceptance
+
+Screenshot: `hist-s4-320.png` (empty import, dark, 320×700).
+
+### Errors (parser text unchanged)
+- Invalid JSON → `File is not valid JSON.`
+- Unknown mode → `Unknown mode "nope". Expected core, http, compare, redis-compare, adaptive-compare.`
+- Missing core fields → `core.algorithm must be a non-empty string`
+
+### Modes
+All five imported successfully in one visit (core, http, compare, redis-compare, adaptive-compare). Selection switch to `core.json` updates Viewing label. HTTP shows Request outcomes + `unavailable` metric. Redis shows Matched + `unavailable` throughput.
+
+### Persistence
+After navigate to Algorithm Lab / Adaptive / Overview / Docs and back to `/benchmarks`: empty state restored (`No file imported in this visit.`). No import-related `localStorage` keys.
+
+### Themes
+Light, Dark, and System applied via existing `throttleforge-theme`. System resolved to dark on this machine.
+
+### Viewport overflow (empty import)
+| Viewport | Overflow |
+| --- | --- |
+| 320×700 | no |
+| 375×812 | no |
+| 390×844 | no (prior stages) |
+| 430×932 | no |
+| 844×390 landscape | no |
+| 768×1024 | no (prior stages) |
+| 1024×900 | no (prior stages) |
+| 1280×900 | no |
+| 1440×1000 | no |
+| 1920×1080 | no |
+
+### Sibling smoke
+- Overview — Availability / demonstration shell loads.
+- Algorithm Lab — scenarios + Committed reference Decisions/timings.
+- Adaptive Explorer — Committed reference + charts.
+- Docs — Benchmark History topic present.
+
+### Commands
+`npm run test:web` — 10 files, 75 tests, passed. `npm run build:web` — passed.
+
+### Intentionally excluded (board inventions)
+KPI cards, persistent run history, search/filters/sort/pagination, Summary/Decisions/Timing/Configuration tabs, Run Benchmark.
+
+### Unverified / limitations
+Full manual keyboard Tab order across every control (browser MCP Tab unreliable, same as Lab). Chart tooltip pixel hover at every viewport. Temporary `/qa-fixtures` public copies used only for CDP import during Stage 3–4 and removed afterward; lasting fixtures remain under `docs/design/fixtures/benchmark-history/`.
+
+---
+
+# Adaptive Explorer redesign
+
+Reference board (confirmed open before Stage 1 and used throughout):
+
+`C:\Users\theab\Downloads\Adaptive Explorer Responsive Dashboard.png`
+
+Screenshots live under `docs/design/screenshots/`.
+
+**Intentionally excluded board inventions (not product features):** traffic-pattern / Duration / Base-limit inputs, Run Experiment, fabricated KPI cards (Total/Allowed/Rejected/Final limit), live traffic + limit overlay chart, limit-adjustment event stream, invented performance-summary KPIs.
+
+## Adaptive Stage 1 — Header, explanation, scenario selector, pass-set
+
+| Screenshot | Page/mode | Viewport | Theme | State | Reference frame |
+| --- | --- | --- | --- | --- | --- |
+| `adaptive-s1-dark-1440.png` | `/adaptive` | 1440×1000 | Dark | Default `steady` | Desktop Dark (hierarchy only; board invents config/KPIs) |
+| `adaptive-s1-light-1440.png` | `/adaptive` | 1440×1000 | Light | Default `steady` | Desktop Light |
+| `adaptive-s1-mobile-390.png` | `/adaptive` | 390×844 | Dark | Header + callout | Mobile menu closed |
+| `adaptive-s1-means-mobile-390.png` | `/adaptive` | 390×844 | Dark | Pass-set means scrolled | Mobile polish |
+
+**Functional checks (CDP):** Means display `0.2164` / `0.4563` / `0.3434` / `0.0500`. Conclusion `passed`. Default scenario `steady` checked. Mixed labeled “Excluded from the mean”. No page overflow at 1440 or 390. About this page does not overlap title (1440: About at x≈1302; 390: wraps without overlap). Means grid 4-col at 1440, 1-col at 390.
+
+**Mismatches vs board:** Board shows experiment configuration bar and KPI strip — intentionally excluded. Compared for page-header hierarchy, amber callout, cyan About, scenario card selection, means tiles, Dark/Light surfaces only.
+
+**Fixes this stage:** `.adaptive-explorer*` scoped CSS; intro max-width; meta strip; means responsive grid; card-wrapped scenario selector with `choice-card` grid; `type-section` panel titles; per-client removed from orphaned 2-col cell (prep for Stage 3).
+
+## Adaptive Stage 2 — Regret chart and runner totals
+
+| Screenshot | Page/mode | Viewport | Theme | Scenario | Reference frame |
+| --- | --- | --- | --- | --- | --- |
+| `adaptive-s2-steady-dark-1440.png` | `/adaptive` | 1440×1000 | Dark | `steady` | Desktop Dark chart/table polish |
+| `adaptive-s2-capacity-change-dark-1440.png` | `/adaptive` | 1440×1000 | Dark | `capacity-change` | Desktop Dark (materially different data) |
+| `adaptive-s2-capacity-change-768.png` | `/adaptive` | 768×1024 | Dark | `capacity-change` | Tablet polish |
+| `adaptive-s2-capacity-change-390.png` | `/adaptive` | 390×844 | Dark | `capacity-change` | Mobile polish |
+
+**Value checks:** `steady` Adaptive regret `6` / offered `32` (matches `DOCUMENTED_REGRET`). `capacity-change` Adaptive/Floor/Ceiling/Oracle regrets `102`/`132`/`48`/`48`. All 12 runner columns present. Chart↔table consistent.
+
+**Scroll / sticky (CDP):** No page overflow at 1440/768/390. At 768 and 390 runner `.table-scroll` is horizontally scrollable; “More columns” visible; `tabIndex=0` on scroll region. Sticky first-column `position:sticky` with opaque theme background.
+
+**Shared chart reason:** Scoped CSS cannot set Recharts grid dash/margins/legend. Updated only `RegretChart` / `WindowChart` presentation to match `CompareBarChart` (dashed grid, margins, compact ticks). Props and data mappings unchanged.
+
+**Fixes this stage:** `RegretChart`/`WindowChart` presentation polish in `charts.tsx`; sticky z-index + focus-visible on `.table-scroll`; `DataTable` keyboard focusable scroll region when wide; Adaptive runner table elevated sticky cells.
+
+## Adaptive Stage 3 — Supporting charts and panels
+
+| Screenshot | Page/mode | Viewport | Theme | Scenario | Reference frame |
+| --- | --- | --- | --- | --- | --- |
+| `adaptive-s3-windows-sustained-dark-1440.png` | `/adaptive` | 1440×1000 | Dark | `sustained-overload` | Desktop Dark (windows + per-client layout) |
+| `adaptive-s3-panels-sustained-dark-1440.png` | `/adaptive` | 1440×1000 | Dark | `sustained-overload` | Desktop supporting panels |
+| `adaptive-s3-about-dark-1440.png` | `/adaptive` | 1440×1000 | Dark | About dialog open | Dialog viewport fit |
+| `adaptive-s3-windows-sustained-390.png` | `/adaptive` | 390×844 | Dark | `sustained-overload` | Mobile stacked windows |
+
+**Checks:** `sustained-overload` Adaptive regret `28`, offered `320`, controller increase `8`. Window series length is **8** (not 320 — trace length is offered work, not window count); axes readable, no page overflow. Window grid 2-col at 1440, 1-col at 390. Per-client panel full-width under window grid (no orphaned half-column); constrained to `max-width: 42rem` (672px). Parameters: floor/initial/ceiling/windowMs/base/perClientReferenceLimit/globalKey unchanged. Observational `10.574` ms. About dialog `dialog.help-dialog` fits viewport (512×548 within 1440×1000).
+
+**Note:** Board has no twin frames for these real transcript sections; compared for Lab/History panel polish only.
+
+**Fixes this stage:** `RunnerWindows` layout (2-col charts + full-width per-client); `type-section` on supporting panels; stack on narrow tables; specificity fix for `.adaptive-explorer .card.adaptive-explorer-per-client` max-width after `.card`.
+
+## Adaptive Stage 4 — Regression and acceptance
+
+Screenshots: `adaptive-s4-320.png` (committed `/adaptive`, dark, 320×700); `adaptive-s4-history-embed-dark-1440.png` (History import of adaptive-compare).
+
+### Viewport overflow (`/adaptive`, CDP)
+| Viewport | Overflow |
+| --- | --- |
+| 320×700 | no |
+| 375×812 | no |
+| 390×844 | no |
+| 430×932 | no |
+| 844×390 landscape | no |
+| 768×1024 | no |
+| 1024×900 | no |
+| 1280×900 | no |
+| 1440×1000 | no |
+| 1920×1080 | no |
+
+### Scenarios / values
+All six scenarios present; default `steady`; mixed labeled excluded; means `0.2164` / `0.4563` / `0.3434` / `0.0500`; conclusion `passed`.
+
+### Themes
+Light / Dark / System applied via `throttleforge-theme` + `data-theme` (Stage 1 captured Light 1440; Dark used throughout Stages 2–4). Charts remain present in each theme.
+
+### Sibling smoke
+- Overview — Availability / demonstration shell loads.
+- Algorithm Lab — scenarios + Decisions chart (Allowed/Rejected) + Committed reference.
+- Benchmark History — empty import; adaptive-compare import shows Adaptive transcript, Imported badge, means, 3 charts, 6 scenarios.
+- Docs — Adaptive Explorer topic present.
+- Adaptive Explorer — Committed reference + charts.
+
+### Shared chart consumers
+`RegretChart` / `WindowChart` presentation-only polish verified on `/adaptive` and History embed. `CompareBarChart` (Lab) unchanged and still renders.
+
+### Commands
+`npm run test:web` — 10 files, 75 tests, passed. `npm run build:web` — passed.
+
+### Intentionally excluded (board inventions)
+Traffic-pattern / Duration / Base-limit inputs, Run Experiment, fabricated KPI cards, live traffic + limit overlay, adjustment-event stream, invented performance-summary KPIs.
+
+### Unverified / limitations
+Full manual keyboard Tab order (browser MCP Tab unreliable). Chart tooltip pixel hover at every viewport. Temporary `/qa-fixtures/adaptive-compare.json` used only for History CDP import during Stage 4 and removed afterward. Hydration mismatch warnings in the Next overlay are from injected `data-cursor-ref` attributes during browser automation, not from Adaptive Explorer markup. `sustained-overload` has 8 adaptive windows (trace length 320 is offered work); tick density was not a dense-series stress case.
+
+---
+
+## Loading system — BrandLoader and page skeletons
+
+Implemented Mark-based `BrandLoader`, shared skeleton primitives, corrected Overview metrics/band skeleton, Benchmark import inline loader, demo button loader, and chart palette flash correction (empty `chart-frame` instead of filled skeleton). No `app/loading.tsx` and no sync-route `loading.tsx` (Algorithm Lab / Adaptive / Docs / Benchmarks are static and render immediately).
+
+### Stage 1 — BrandLoader and primitives
+- `Mark` accepts `activity` with explicit `mark-seg-*` classes; CSS sequential accent on body segments; nick stays warning (button variant uses opacity on currentColor).
+- Primitives in `components/skeletons/primitives.tsx`; Overview composer in `overview-content-skeleton.tsx`.
+- Reduced motion: animations gated with `prefers-reduced-motion: no-preference`; existing global reduce rule still zeros motion.
+- Verified in browser: dark collecting state shows Checking/Collecting header + `aria-busy` metrics region with 4 tone-bordered metric cards + overview-band placeholders (41 `.skeleton-block` nodes while Fetch held `/api/live` and `/api/policy`).
+
+Screenshots:
+- `load-overview-collecting-dark-1440.png` — header Checking/Collecting while first scrape held
+- `load-overview-metrics-skel-dark-1440.png` — 4-metric + band skeleton region
+- `load-overview-metrics-skel-dark-390.png` — narrow viewport (sidebar `display:none` at 390)
+- `load-overview-metrics-skel-light-1440.png` — theme token check (light `data-theme` applied during capture)
+
+### Stage 2 — Overview
+- Suspense fallback and `!live.attempted` share `OverviewContentSkeleton` (`full` vs `metrics`).
+- Policy loading: inline BrandLoader + fact value lines; unavailable clears pending.
+- Example table: `SkeletonTable` while policy loading; static panel copy remains.
+- Poll does not re-enter skeleton after `attempted` (gate unchanged).
+- Failed scrape: existing error + Retry (capture: `load-overview-error-retry-dark-1440.png`).
+
+### Stage 3 — Other routes
+- Benchmark empty import immediate (`load-benchmarks-empty-dark-1440.png`); reading uses BrandLoader inline in drop zone.
+- Demo live button: BrandLoader `button` + existing label/disabled/`aria-busy`.
+- Charts: palette null → empty `chart-frame` (height reserved), not a filled skeleton product.
+- Soft/hard nav to `/compare`, `/benchmarks`, `/adaptive`, `/docs`: content available immediately; **no** segment `loading.tsx` added.
+
+### Stage 4 — Regression
+| Check | Result |
+| --- | --- |
+| Overview collecting skeleton (Fetch hold) | Pass — 4 metrics + band, Checking/Collecting |
+| Overview failed scrape + Retry | Pass |
+| Algorithm Lab immediate render | Pass |
+| Benchmark empty import | Pass |
+| No sync-route loading.tsx | Pass (intentional) |
+| `npm run test:web` | 10 files, 75 tests, passed |
+| `npm run build:web` | Passed |
+
+### Verification matrix notes
+| State | Verified? | Notes |
+| --- | --- | --- |
+| Overview initial before first attempt | Yes | Fetch hold on `/api/live` |
+| Successful first scrape | Unverified this session | API unreachable locally (`fetch failed`) |
+| Missing-series / No sample | Unverified this session | Needs successful scrape |
+| Explicit zero | Unverified this session | Needs successful scrape |
+| Failed scrape + Retry | Yes | |
+| Stale metrics | Unverified this session | Needs prior success then stall |
+| Policy loading → success | Partial | Loading UI held; success needs policy API |
+| Policy loading → unavailable | Unverified this session | |
+| Benchmark reading → success/error | Code path only | BrandLoader wired; file read not CDP-captured |
+| Demo pending | Code path only | Live probe button wired; not clicked this session |
+| Reduced motion | CSS gated | Not toggled in OS settings this session |
+| Light / Dark | Partial | Dark primary; light token flip attempted |
+| Full viewport matrix | Partial | 390 and 1440 captured for loading; other sizes rely on shared layout CSS |
+
+### Intentionally not shipped
+- Full-screen initial app loader
+- `app/loading.tsx`
+- `compare` / `benchmarks` / `adaptive` / `docs` `loading.tsx`
+- Fake delays or fabricated loading for sync committed JSON
+
+

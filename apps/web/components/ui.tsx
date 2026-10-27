@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useHelp } from "@/components/help-dialog";
+import { SkeletonChart, SkeletonMetric, SkeletonTable } from "@/components/skeletons/primitives";
 
 export { presenceNote } from "@/lib/metrics/format";
 
@@ -94,27 +95,32 @@ export function MetricSummary({
 }
 
 export function SkeletonBlock({ label, kind }: { label: string; kind: "metric" | "chart" | "table" }) {
+  if (kind === "metric") {
+    return (
+      <div aria-busy="true">
+        <p className="sr-only">{label}</p>
+        <SkeletonMetric />
+      </div>
+    );
+  }
   return (
     <div className="card" aria-busy="true">
       <p className="sr-only">{label}</p>
-      {kind === "metric" ? (
-        <div className="grid gap-3">
-          <div className="skeleton-block h-3 w-24" />
-          <div className="skeleton-block metric-figure w-32" />
-          <div className="skeleton-block h-3 w-40" />
-        </div>
-      ) : null}
-      {kind === "chart" ? <div className="skeleton-block h-(--chart-height) w-full" /> : null}
-      {kind === "table" ? (
-        <div className="grid gap-2">
-          {Array.from({ length: 5 }, (_, index) => (
-            <div key={index} className="skeleton-block h-4.5 w-full" />
-          ))}
-        </div>
-      ) : null}
+      {kind === "chart" ? <SkeletonChart /> : null}
+      {kind === "table" ? <SkeletonTable /> : null}
     </div>
   );
 }
+
+export {
+  SkeletonChart,
+  SkeletonHeading,
+  SkeletonLine,
+  SkeletonMetric,
+  SkeletonPanel,
+  SkeletonRow,
+  SkeletonTable,
+} from "@/components/skeletons/primitives";
 
 export function Callout({ title, tone = "warning", children }: { title: string; tone?: "info" | "warning" | "danger" | "success"; children: ReactNode }) {
   const toneClass = tone === "warning" ? "notice-warning" : tone === "danger" ? "notice-danger" : tone === "success" ? "notice-success" : "";
@@ -147,7 +153,12 @@ export function DataTable({
   return (
     <div>
       {wide && !stackNarrow ? <p className="type-secondary mb-2 text-ink-dim md:sr-only">More columns</p> : null}
-      <div className={wide ? "table-scroll" : undefined}>
+      <div
+        className={wide && !stackNarrow ? "table-scroll" : undefined}
+        tabIndex={wide && !stackNarrow ? 0 : undefined}
+        role={wide && !stackNarrow ? "region" : undefined}
+        aria-label={wide && !stackNarrow ? `${caption} Scroll horizontally for more columns.` : undefined}
+      >
         <table className={`data-table ${stackNarrow ? "stack-narrow" : ""}`}>
           <caption className="type-secondary mb-2 text-left text-ink-dim">{caption}</caption>
           <thead>

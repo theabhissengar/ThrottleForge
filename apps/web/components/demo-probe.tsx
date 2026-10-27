@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { BrandLoader } from "@/components/brand-loader";
 import { useLive } from "@/components/live-provider";
+import { SkeletonTable } from "@/components/skeletons/primitives";
 import { Callout, DataTable, Panel } from "@/components/ui";
 import { headerCell, type ProbeSummary } from "@/lib/demo/classify";
 import { exampleFixedWindowRows } from "@/lib/demo/example";
@@ -28,7 +30,12 @@ function ExampleDemonstration({ policy }: { policy: PolicyView }) {
         <p className="type-body text-ink-dim">
           These rows illustrate the configured limit, were not sent, are not quota decisions, and are not in the counters or charts.
         </p>
-        {policy.state === "loading" ? <p className="type-body mt-4">Waiting for the policy reading.</p> : null}
+        {policy.state === "loading" ? (
+          <div className="mt-4" aria-busy="true" aria-label="Waiting for the policy reading">
+            <p className="sr-only">Waiting for the policy reading.</p>
+            <SkeletonTable rows={4} />
+          </div>
+        ) : null}
         {policy.state === "unavailable" ? (
           <p className="type-body mt-4">The example needs the policy reading. No example rows are shown.</p>
         ) : null}
@@ -95,7 +102,14 @@ function LiveDemonstration({ policy }: { policy: PolicyView }) {
             ) : null}
           </div>
           <button type="button" className="btn btn-primary" onClick={() => void run()} disabled={running}>
-            {running ? "Sending 10 requests" : "Run demonstration"}
+            {running ? (
+              <span className="inline-flex items-center gap-2">
+                <BrandLoader variant="button" />
+                Sending 10 requests
+              </span>
+            ) : (
+              "Run demonstration"
+            )}
           </button>
         </div>
         {running ? <p className="type-secondary mt-3 text-ink-dim">Sending 10 requests to this instance.</p> : null}

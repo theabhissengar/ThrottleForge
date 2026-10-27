@@ -281,6 +281,123 @@ input:disabled {
   max-width: 42rem;
 }
 
+.adaptive-explorer-intro {
+  max-width: 42rem;
+}
+
+.adaptive-explorer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+.adaptive-explorer-meta .type-data-sm {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.adaptive-explorer-means {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .adaptive-explorer-means {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .adaptive-explorer-means {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.adaptive-explorer-scenarios {
+  padding: var(--space-4);
+}
+
+.adaptive-explorer-scenarios fieldset {
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.adaptive-explorer-scenario-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 640px) {
+  .adaptive-explorer-scenario-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .adaptive-explorer-scenario-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.adaptive-explorer-scenario {
+  padding: var(--space-3) var(--space-4);
+  height: 100%;
+  align-items: flex-start;
+}
+
+.adaptive-explorer-scenario input {
+  margin-top: 2px;
+  flex: none;
+}
+
+.adaptive-explorer-chart {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.adaptive-explorer-table {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.adaptive-explorer-runner-table .table-scroll {
+  border: var(--border-width) solid var(--tf-line);
+  border-radius: var(--radius-control);
+  background: var(--tf-elevated);
+}
+
+.adaptive-explorer-runner-table .table-scroll:focus-visible {
+  outline: var(--focus-width) solid var(--tf-accent);
+  outline-offset: var(--focus-offset);
+}
+
+.adaptive-explorer-runner-table .table-scroll .data-table th:first-child,
+.adaptive-explorer-runner-table .table-scroll .data-table td:first-child {
+  background: var(--tf-elevated);
+}
+
+.adaptive-explorer-runner-table .table-scroll tbody tr:hover td:first-child {
+  background: var(--tf-hover);
+}
+
+.adaptive-explorer-window-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 1280px) {
+  .adaptive-explorer-window-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .algorithm-lab-scenarios {
   padding: var(--space-4);
 }
@@ -328,6 +445,123 @@ input:disabled {
 }
 
 .algorithm-lab-table {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.benchmark-history-import {
+  min-width: 0;
+}
+
+.benchmark-history .benchmark-history-drop {
+  display: block;
+  min-width: 0;
+  border: var(--border-width) dashed var(--tf-control-border);
+  border-radius: var(--radius-card);
+  background: var(--tf-elevated);
+  padding: var(--space-6) var(--space-4);
+  transition:
+    border-color var(--duration-base) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard);
+}
+
+.benchmark-history .benchmark-history-drop:hover:not(.is-reading) {
+  border-color: var(--tf-choice-border);
+}
+
+.benchmark-history .benchmark-history-drop.is-dragging {
+  border-color: var(--tf-accent);
+  background: var(--tf-selected);
+}
+
+.benchmark-history .benchmark-history-drop.is-reading {
+  opacity: 0.72;
+}
+
+.benchmark-history .benchmark-history-drop:focus-within {
+  outline: var(--focus-width) solid var(--tf-accent);
+  outline-offset: var(--focus-offset);
+}
+
+.benchmark-history-file {
+  max-width: 100%;
+}
+
+.benchmark-history-filename {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.benchmark-history-guide {
+  max-width: 42rem;
+}
+
+.benchmark-history-commands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.benchmark-history-commands code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  border: var(--border-width) solid var(--tf-line);
+  border-radius: var(--radius-compact);
+  background: var(--tf-elevated);
+  padding: 2px var(--space-2);
+}
+
+.benchmark-history-empty {
+  max-width: 42rem;
+}
+
+.benchmark-history-session-card {
+  min-width: 0;
+  border: var(--border-width) solid var(--tf-line);
+  border-radius: var(--radius-control);
+  background: var(--tf-surface);
+  padding: var(--space-3);
+}
+
+.benchmark-history-session-card.is-selected {
+  border-color: var(--tf-choice-border);
+  background: var(--tf-selected);
+}
+
+.benchmark-history-session-card .text-link,
+.benchmark-history-file-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.benchmark-history-session tr.is-selected td {
+  background: var(--tf-selected);
+}
+
+.benchmark-history-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.benchmark-history-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+.benchmark-history-detail-meta .type-data-sm {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.benchmark-history-table {
   min-width: 0;
   max-width: 100%;
 }
@@ -502,6 +736,11 @@ input:disabled {
   max-width: 100%;
 }
 
+.adaptive-explorer .card.adaptive-explorer-per-client,
+.adaptive-explorer .card.adaptive-explorer-observational {
+  max-width: 42rem;
+}
+
 .stat-tile {
   border: var(--border-width) solid var(--tf-line);
   border-radius: var(--radius-control);
@@ -649,6 +888,140 @@ input:disabled {
 .skeleton-block {
   background: var(--tf-skeleton);
   border-radius: var(--radius-control);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-block {
+    animation: skeleton-pulse 1.6s var(--ease-standard) infinite;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.brand-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.brand-loader-route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+}
+
+.brand-loader-status {
+  min-width: 0;
+}
+
+.brand-loader-mark {
+  display: block;
+  flex-shrink: 0;
+  color: var(--tf-ink);
+}
+
+.brand-loader-mark-inline {
+  width: 20px;
+  height: 20px;
+}
+
+.brand-loader-mark-route {
+  width: 28px;
+  height: 28px;
+}
+
+.brand-loader-mark-button {
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+}
+
+.brand-loader-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  line-height: 0;
+}
+
+.mark-activity .mark-seg {
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mark-activity .mark-seg-a,
+  .mark-activity .mark-seg-b,
+  .mark-activity .mark-seg-c,
+  .mark-activity .mark-seg-d {
+    animation: mark-seg-accent 1.4s var(--ease-standard) infinite;
+  }
+
+  .mark-activity .mark-seg-a {
+    animation-delay: 0ms;
+  }
+
+  .mark-activity .mark-seg-c {
+    animation-delay: 120ms;
+  }
+
+  .mark-activity .mark-seg-b {
+    animation-delay: 240ms;
+  }
+
+  .mark-activity .mark-seg-d {
+    animation-delay: 360ms;
+  }
+
+  .brand-loader-button .mark-activity .mark-seg-a,
+  .brand-loader-button .mark-activity .mark-seg-b,
+  .brand-loader-button .mark-activity .mark-seg-c,
+  .brand-loader-button .mark-activity .mark-seg-d {
+    animation-name: mark-seg-button;
+  }
+}
+
+@keyframes mark-seg-accent {
+  0%,
+  100% {
+    fill: currentColor;
+    opacity: 1;
+  }
+  35% {
+    fill: var(--tf-accent);
+    opacity: 1;
+  }
+  55% {
+    fill: currentColor;
+    opacity: 0.85;
+  }
+}
+
+@keyframes mark-seg-button {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.45;
+  }
+}
+
+.mark-activity .mark-seg-nick {
+  fill: var(--tf-warning);
+}
+
+.brand-loader-button .mark-activity .mark-seg-nick {
+  fill: currentColor;
+  opacity: 0.85;
 }
 
 .import-drop {
@@ -1283,12 +1656,22 @@ dialog.help-dialog[open] {
 .table-scroll td:first-child {
   position: sticky;
   left: 0;
+  z-index: 1;
   background: var(--tf-surface);
   box-shadow: inset -1px 0 0 var(--tf-line);
 }
 
+.table-scroll th:first-child {
+  z-index: 2;
+}
+
 .table-scroll tbody tr:hover td:first-child {
   background: var(--tf-hover);
+}
+
+.table-scroll:focus-visible {
+  outline: var(--focus-width) solid var(--tf-accent);
+  outline-offset: var(--focus-offset);
 }
 
 @media (max-width: 767px) {

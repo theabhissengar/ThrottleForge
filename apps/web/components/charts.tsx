@@ -209,7 +209,7 @@ function OutcomeBar(props: {
 
 export function OutcomeTrendChart({ points }: { points: OutcomeChartPoint[] }) {
   const palette = useChartPalette();
-  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
+  if (!palette) return <div className="chart-frame" aria-hidden="true" />;
   return (
     <div className="chart-frame" role="img" aria-label="Allowed and rejected decisions in each scrape interval. The vertical axis is a count of decisions and starts at zero. Allowed is green. Rejected is red. A missing series has no bar. A reported zero is a short mark on the baseline.">
       <ResponsiveContainer width="100%" height="100%">
@@ -235,7 +235,7 @@ export function BucketChart({
   const palette = useChartPalette();
   const narrow = useNarrow();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
+  if (!palette) return <div className="chart-frame" aria-hidden="true" />;
   return (
     <div className="chart-frame" role="img" aria-label="Cumulative limiter-operation observations at each histogram upper bound. This is not an exact percentile.">
       <ResponsiveContainer width="100%" height="100%">
@@ -259,7 +259,7 @@ export function CompareBarChart({
   const palette = useChartPalette();
   const compact = useCompact();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
+  if (!palette) return <div className="chart-frame" aria-hidden="true" />;
   return (
     <div className="chart-frame" role="img" aria-label="Allowed and rejected counts for each algorithm. The vertical axis is a request count and starts at zero.">
       <ResponsiveContainer width="100%" height="100%">
@@ -285,17 +285,17 @@ export function RegretChart({
   const palette = useChartPalette();
   const compact = useCompact();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
+  if (!palette) return <div className="chart-frame" aria-hidden="true" />;
   return (
     <div className="chart-frame" role="img" aria-label="Regret for each runner in the selected scenario. Regret is shortfall plus excess. The axis starts at zero.">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 8 }} barCategoryGap="22%">
-          <CartesianGrid stroke={palette.grid} vertical={false} />
-          <XAxis dataKey="name" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} interval={0} tickFormatter={(value) => categoryTick(value, compact)} />
-          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
+        <BarChart data={points} margin={{ top: 12, right: 12, left: 4, bottom: compact ? 4 : 8 }} barCategoryGap={compact ? "28%" : "24%"}>
+          <CartesianGrid stroke={palette.grid} vertical={false} strokeDasharray="3 3" />
+          <XAxis dataKey="name" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} interval={0} tickFormatter={(value) => categoryTick(value, compact)} height={compact ? 36 : 40} />
+          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={compact ? 36 : 44} axisLine={false} tickLine={false} />
           <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <UnitTooltip {...props} unit="regret" />} />
-          <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
-          <Bar dataKey="regret" name="Regret" maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion}>
+          <Legend wrapperStyle={{ fontSize: 12, color: palette.muted, paddingTop: 4 }} iconType="square" iconSize={10} />
+          <Bar dataKey="regret" name="Regret" maxBarSize={compact ? 24 : 32} radius={[4, 4, 0, 0]} isAnimationActive={motion}>
             {points.map((point) => (
               <Cell key={point.name} fill={colorFromToken(palette, point.fill)} />
             ))}
@@ -316,18 +316,18 @@ export function WindowChart({
   const palette = useChartPalette();
   const compact = useCompact();
   const motion = useMotion();
-  if (!palette) return <div className="skeleton-block h-(--chart-height) w-full" />;
+  if (!palette) return <div className="chart-frame" aria-hidden="true" />;
   return (
     <div className="chart-frame" role="img" aria-label="Values by window index. The vertical axis starts at zero.">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 8 }} barGap={4} barCategoryGap="22%">
-          <CartesianGrid stroke={palette.grid} vertical={false} />
-          <XAxis dataKey="window" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} minTickGap={compact ? 16 : 8} />
-          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={48} axisLine={false} tickLine={false} />
+        <BarChart data={points} margin={{ top: 12, right: 12, left: 4, bottom: compact ? 4 : 8 }} barGap={4} barCategoryGap={compact ? "28%" : "24%"}>
+          <CartesianGrid stroke={palette.grid} vertical={false} strokeDasharray="3 3" />
+          <XAxis dataKey="window" tick={{ fill: palette.muted, fontSize: compact ? 11 : 12 }} axisLine={{ stroke: palette.grid }} tickLine={false} minTickGap={compact ? 24 : 12} height={compact ? 36 : 40} />
+          <YAxis tick={{ fill: palette.muted, fontSize: 12 }} domain={[0, "dataMax"]} allowDecimals={false} width={compact ? 36 : 44} axisLine={false} tickLine={false} />
           <Tooltip allowEscapeViewBox={{ x: false, y: false }} content={(props) => <UnitTooltip {...props} unit="count" />} />
-          <Legend wrapperStyle={{ fontSize: 12, color: palette.muted }} />
+          <Legend wrapperStyle={{ fontSize: 12, color: palette.muted, paddingTop: 4 }} iconType="square" iconSize={10} />
           {series.map((item) => (
-            <Bar key={item.key} dataKey={item.key} name={item.name} fill={colorFromToken(palette, item.fill)} maxBarSize={28} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
+            <Bar key={item.key} dataKey={item.key} name={item.name} fill={colorFromToken(palette, item.fill)} maxBarSize={compact ? 24 : 32} radius={[4, 4, 0, 0]} isAnimationActive={motion} />
           ))}
         </BarChart>
       </ResponsiveContainer>
